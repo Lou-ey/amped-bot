@@ -1,0 +1,116 @@
+plugins:
+  lavasrc:
+    providers: # Custom providers for track loading. This is the default
+      - "ytsearch:\"%ISRC%\"" # Will be ignored if track does not have an ISRC. See https://en.wikipedia.org/wiki/International_Standard_Recording_Code
+      - "ytsearch:%QUERY%" # Will be used if track has no ISRC or no track could be found for the ISRC
+    sources:
+      spotify: true # Enable Spotify source
+      applemusic: false # Enable Apple Music source
+      deezer: false # Enable Deezer source
+      yandexmusic: false # Enable Yandex Music source
+      flowerytts: false # Enable Flowery TTs source
+      youtube: true # Enable YouTube search source (https://github.com/topi314/LavaSearch)
+    lyrics-sources:
+      spotify: false # Enable Spotify lyrics source
+      deezer: false # Enable Deezer lyrics source
+      youtube: false # Enable YouTube lyrics source
+      yandexmusic: false # Enable Yandex Music lyrics source
+    spotify:
+      clientId: "7d040277edda4b2b8ad1541e5625c4e4"
+      clientSecret: "65a00bba04ed49bca8b3182d9f687068"
+      countryCode: "US"
+      playlistLoadLimit: 6
+      albumLoadLimit: 6
+      resolveArtistsInSearch: true
+      localFiles: false
+    youtube:
+      countryCode: "US"
+  youtube:
+    enabled: true # Whether this source can be used.
+    allowSearch: true # Whether "ytsearch:" and "ytmsearch:" can be used.
+    allowDirectVideoIds: true # Whether just video IDs can match. If false, only complete URLs will be loaded.
+    allowDirectPlaylistIds: true # Whether just playlist IDs can match. If false, only complete URLs will be loaded.
+    clients:
+      - MUSIC
+      - ANDROID_VR
+      - WEB
+      - WEBEMBEDDED
+server: # REST and WS server
+  port: 2333
+  address: 0.0.0.0
+  http2:
+    enabled: false # Whether to enable HTTP/2 support
+
+lavalink:
+  plugins:
+    # Replace VERSION with the current version as shown by the Releases tab or a long commit hash for snapshots.
+    - dependency: "dev.lavalink.youtube:youtube-plugin:1.11.3"
+      snapshot: false # Set to true if you want to use a snapshot version.
+    - dependency: "com.github.topi314.lavasrc:lavasrc-plugin:4.3.0"
+      repository: "https://maven.lavalink.dev/releases" # this is optional for lavalink v4.0.0-beta.5 or greater
+      snapshot: false # set to true if you want to use snapshot builds (see below)
+  server:
+    password: "luisito"
+    sources:
+      youtube: false # Make sure to maintain this value as false.
+      bandcamp: true
+      soundcloud: true
+      twitch: true
+      vimeo: true
+      http: true
+      local: false
+    filters: # All filters are enabled by default
+      volume: true
+      equalizer: true
+      karaoke: true
+      timescale: true
+      tremolo: true
+      vibrato: true
+      distortion: true
+      rotation: true
+      channelMix: true
+      lowPass: true
+    bufferDurationMs: 400 # The duration of the NAS buffer. Higher values fare better against longer GC pauses.
+    frameBufferDurationMs: 5000 # How many milliseconds of audio to keep buffered
+    opusEncodingQuality: 10 # Opus encoder quality.
+    resamplingQuality: LOW # Quality of resampling operations.
+    trackStuckThresholdMs: 10000 # The threshold for how long a track can be stuck.
+    useSeekGhosting: true # Seek ghosting is the effect where whilst a seek is in progress, the audio buffer is read from until empty, or until seek is ready.
+    youtubePlaylistLoadLimit: 6 # Number of pages at 100 each
+    playerUpdateInterval: 5 # How frequently to send player updates to clients, in seconds
+    youtubeSearchEnabled: true
+    soundcloudSearchEnabled: true
+    spotifySearchEnabled: true
+    gc-warnings: true
+
+metrics:
+  prometheus:
+    enabled: false
+    endpoint: /metrics
+
+sentry:
+  dsn: ""
+  environment: ""
+  # tags:
+  #   some_key: some_value
+  #   another_key: another_value
+
+logging:
+  file:
+    path: ./logs/
+  level:
+    root: INFO
+    lavalink: INFO
+    lavaplayer: INFO
+    dev.lavalink.youtube.http.YoutubeOauth2Handler: INFO
+  request:
+    enabled: true
+    includeClientInfo: true
+    includeHeaders: false
+    includeQueryString: true
+    includePayload: true
+    maxPayloadLength: 10000
+  logback:
+    rollingpolicy:
+      max-file-size: 1GB
+      max-history: 30
