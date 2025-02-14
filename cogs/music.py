@@ -65,6 +65,16 @@ class Music(commands.Cog):
             r_embed.description = ':x: **Not connected to any voice channel.**'
         await ctx.send(embed=g_embed)
 
+    @staticmethod
+    def source_emoji(source: str):
+        if source == 'youtube':
+            return '<:youtube:1304468389883809813>'
+        elif source == 'spotify':
+            return '<:spotify:1304468005102555206>'
+        elif source == 'soundcloud':
+            return '<:soundcloud:1305561757653139506>'
+        return ''
+
     @commands.command()
     async def play(self, ctx, *, query: str):
         if not ctx.voice_client:
@@ -99,21 +109,24 @@ class Music(commands.Cog):
                 await vc.play(first_track)
                 embed = self._now_playing_embed(first_track, ctx)
 
-        else:
+        else: # Se for apenas uma música
             track = tracks[0]
-            if not vc.playing:
+            if not vc.playing: # Toca a música
                 await vc.play(track)
                 embed = self._now_playing_embed(track, ctx)
-            else:
+                #await msg.edit(content='', embed=embed)
+            else: # Adiciona à fila
                 await vc.queue.put_wait(track)
                 embed = discord.Embed(color=green, description=f"📥 **{track.title}** added to the queue.")
                 embed.set_footer(text=f"Requested by {ctx.author.display_name}")
 
-        await ctx.send(embed=embed)
+        await msg.edit(content='', embed=embed)
+        #await ctx.send(embed=embed)
 
     def _now_playing_embed(self, track, ctx):
         """Cria um embed para a música que está a tocar."""
-        embed = discord.Embed(color=blue, title="🎶 Now Playing")
+        source = self.source_emoji(track.source)
+        embed = discord.Embed(color=blue, title=f"{source}  🎶 Now Playing")
         embed.description = f"**{track.title}** by `{track.author}`"
 
         duration = ":red_circle: **LIVE**" if track.is_stream else time.strftime('%H:%M:%S',
@@ -128,28 +141,36 @@ class Music(commands.Cog):
 
     @commands.Cog.listener()
     async def on_wavelink_track_end(self, payload: wavelink.TrackEndEventPayload):
-        player = payload.player
+        vc: wavelink.Player = payload.player
+        source = self.source_emoji(payload.track.source)
 
-        if not player.queue.is_empty:
-            next_track = await player.queue.get_wait()
-            await player.play(next_track)
+        if vc.queue.is_empty and vc.auto_queue:
+            track = vc.auto_queue.get()
+            await vc.play(track)
+            embed = self._now_playing_embed(track, vc.text_channel)
+            await vc.text_channel.send(embed=embed)
 
-            embed = discord.Embed(color=blue, title="🎶 Now Playing")
+        if not vc.queue.is_empty:
+            next_track = await vc.queue.get_wait()
+            await vc.play(next_track)
+
+            embed = discord.Embed(color=blue, title=f"{source}  🎶 Now Playing")
             embed.description = f"**{next_track.title}** by `{next_track.author}`"
             duration = time.strftime('%H:%M:%S', time.gmtime(next_track.length / 1000))
             embed.add_field(name="Duration", value=duration)
 
             if next_track.artwork:
                 embed.set_thumbnail(url=next_track.artwork)
-            await player.text_channel.send(embed=embed)
+            await vc.text_channel.send(embed=embed)
         else:
             embed = discord.Embed(description="🏁 **End of the queue.**", color=green)
-            await player.text_channel.send(embed=embed)
+            await vc.text_channel.send(embed=embed)
 
     @commands.Cog.listener()
     async def on_wavelink_inactive_player(self, player: wavelink.Player):
-        await player.channel.send(f"The player has been inactive for `{player.inactive_timeout}` seconds. Goodbye!")
-        await player.disconnect()
+        await player.disconnect(force=True)
+        embed = discord.Embed(description="🏁 **Disconnected due to inactivity.**", color=green)
+        await player.text_channel.send(embed=embed)
 
     @commands.command()
     async def pause(self, ctx):
@@ -175,7 +196,10 @@ class Music(commands.Cog):
     async def stop(self, ctx):
         vc: wavelink.Player = ctx.voice_client
         if vc and vc.playing:
-            await vc.stop()
+            vc.queue.clear()
+            vc.auto_queue.clear()
+            vc.auto_play = wavelink.AutoPlayMode.disabled
+            await vc.stop(force=True)
             embed = discord.Embed(description="⏹️ **Music stopped.**", color=green)
             await ctx.send(embed=embed)
 
@@ -201,9 +225,41 @@ class Music(commands.Cog):
             return
 
         queue_list = list(vc.queue.copy())
-        description = '\n'.join(f"**{i + 1}.** {track.title}" for i, track in enumerate(queue_list[:10]))
+        description = '\n'.join(f"**{i + 1}.** {track.title}" for i, track in enumerate(queue_list[:len(queue_list)]))
         embed.title = f'📜 Queue ({len(queue_list)} songs)'
         embed.description = description
+        await ctx.send(embed=embed)
+
+    #@commands.command()
+    #async def autoplay(self, ctx, mode: str = 'enabled'):
+        #if not ctx.voice_client:
+            #return await ctx.send(embed=discord.Embed(color=red, description=":x: **Not connected to any voice channel.**"))
+
+        #vc: wavelink.Player = ctx.voice_client
+
+        #modes = {
+            #'enabled': wavelink.AutoPlayMode.enabled,
+            #'partial': wavelink.AutoPlayMode.partial,
+            #'disabled': wavelink.AutoPlayMode.disabled
+        #}
+
+        #if mode.lower() not in modes:
+            #return await ctx.send(embed=discord.Embed(color=red, description=":x: **Invalid mode.**"))
+
+        #vc.autoplay = modes[mode.lower()]
+        #embed = discord.Embed(color=green, description=f"🔀 **Autoplay mode set to** `{mode.lower()}`.")
+        #await ctx.send(embed=embed)
+
+    @commands.command()
+    async def autoplay(self, ctx):
+        vc: wavelink.Player = ctx.voice_client
+        if not vc:
+            return await ctx.send(
+                embed=discord.Embed(color=red, description="❌ **Bot is not connected to a voice channel.**"))
+
+        vc.auto_play = wavelink.AutoPlayMode.enabled  # Ativa o AutoPlay corretamente
+
+        embed = discord.Embed(description="🔄 **Autoplay enabled.**", color=green)
         await ctx.send(embed=embed)
 
 async def setup(bot):

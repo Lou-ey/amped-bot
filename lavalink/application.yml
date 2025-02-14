@@ -30,6 +30,9 @@ plugins:
     allowSearch: true # Whether "ytsearch:" and "ytmsearch:" can be used.
     allowDirectVideoIds: true # Whether just video IDs can match. If false, only complete URLs will be loaded.
     allowDirectPlaylistIds: true # Whether just playlist IDs can match. If false, only complete URLs will be loaded.
+    playlistLoadLimit: 6 # How many pages of a playlist to load. Each page has 100 items.
+    searchEnabled: true # Whether search queries are enabled.
+    mixLoadLimit: 10 # How many pages of a mix to load. Each page has 100 items.
     clients:
       - MUSIC
       - ANDROID_VR
