@@ -1,3 +1,4 @@
+import datetime
 import discord
 from discord.ext import commands
 import wavelink
@@ -26,7 +27,7 @@ class Music(commands.Cog):
 
     @commands.Cog.listener()
     async def on_wavelink_node_ready(self, payload: wavelink.NodeReadyEventPayload) -> None:
-        print(f"Node {payload.node!r} is ready!")
+        print(f"\n{payload.node!r} is ready!")
 
     @commands.command(name='connect', aliases=['con', 'c'])
     async def connect(self, ctx):
@@ -87,7 +88,7 @@ class Music(commands.Cog):
                 embed=discord.Embed(color=red, description="❌ **Please provide a song name or URL to play.**")
             )
 
-        tracks = await wavelink.Playable.search(query)
+        tracks: wavelink.Search = await wavelink.Playable.search(query)
         if not tracks:
             return await ctx.send(embed=discord.Embed(color=red, description=f"❌ **No results found for `{query}`.**"))
 
@@ -105,12 +106,12 @@ class Music(commands.Cog):
 
             # Se não estiver a tocar, toca a primeira música da playlist
             if not vc.playing:
-                first_track = tracks.tracks[0]
-                await vc.play(first_track)
-                embed = self._now_playing_embed(first_track, ctx)
+                track: wavelink.Playable = tracks.tracks[0]
+                await vc.play(track)
+                embed = self._now_playing_embed(track, ctx)
 
         else: # Se for apenas uma música
-            track = tracks[0]
+            track: wavelink.Playable = tracks[0]
             if not vc.playing: # Toca a música
                 await vc.play(track)
                 embed = self._now_playing_embed(track, ctx)
@@ -257,7 +258,7 @@ class Music(commands.Cog):
             return await ctx.send(
                 embed=discord.Embed(color=red, description="❌ **Bot is not connected to a voice channel.**"))
 
-        vc.auto_play = wavelink.AutoPlayMode.enabled  # Ativa o AutoPlay corretamente
+        vc.auto_play = wavelink.AutoPlayMode.enabled
 
         embed = discord.Embed(description="🔄 **Autoplay enabled.**", color=green)
         await ctx.send(embed=embed)
@@ -266,4 +267,3 @@ async def setup(bot):
     play_music = Music(bot)
     await bot.add_cog(play_music)
     await play_music.setup()
-

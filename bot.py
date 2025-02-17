@@ -8,6 +8,7 @@ intents = discord.Intents.all()
 intents.members = True
 intents.message_content = True
 
+
 client = commands.Bot(command_prefix='!', intents=intents)
 
 green = 0x00FF00
@@ -22,16 +23,19 @@ async def on_ready():
 
         client.tree.copy_global_to(guild=server) # Copy global commands to the server
         await client.tree.sync(guild=server) # Sync the commands to the server
-
+    print(f'\nCogs loaded:')
     for filename in os.listdir('./cogs'):
         if filename.endswith('.py'):
             await client.load_extension(f'cogs.{filename[:-3]}')
-
+            try:
+                print(f'{filename[:-3]}')
+            except Exception as e:
+                print(f'Failed to load {filename[:-3]}')
+                print(e)
 
 @client.event
 async def on_message(message):
     await client.process_commands(message)
-
 
 @client.tree.command(name='help', description='Help command')
 async def help(ctx): # This is a global command
@@ -59,6 +63,5 @@ async def chg_vc(ctx, from_channel: discord.VoiceChannel, to_channel: discord.Vo
     await ctx.voice_client.move_to(to_channel)
     embed.description(f'Moved from {from_channel} to {to_channel}')
     await ctx.send(embed=embed)
-
 
 client.run(TOKEN)
