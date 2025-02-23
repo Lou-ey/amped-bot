@@ -104,11 +104,9 @@ class Music(commands.Cog):
             embed.set_footer(text=f"Requested by {ctx.author.display_name}")
             await msg.edit(content='', embed=embed)
 
-            # Se não estiver a tocar, toca a primeira música da playlist
             if not vc.playing:
-                track: wavelink.Playable = tracks.tracks[0]
-                await vc.play(track)
-                embed = self._now_playing_embed(track, ctx)
+                await vc.play(await vc.queue.get_wait())
+                embed = self._now_playing_embed(vc.current, ctx)
 
         else: # Se for apenas uma música
             track: wavelink.Playable = tracks[0]
@@ -170,7 +168,7 @@ class Music(commands.Cog):
     @commands.Cog.listener()
     async def on_wavelink_inactive_player(self, player: wavelink.Player):
         await player.disconnect(force=True)
-        embed = discord.Embed(description="🏁 **Disconnected due to inactivity.**", color=green)
+        embed = discord.Embed(description=":wave: **Disconnected due to inactivity.**", color=green)
         await player.text_channel.send(embed=embed)
 
     @commands.command()
@@ -226,30 +224,10 @@ class Music(commands.Cog):
             return
 
         queue_list = list(vc.queue.copy())
-        description = '\n'.join(f"**{i + 1}.** {track.title}" for i, track in enumerate(queue_list[:len(queue_list)]))
+        description = '\n'.join(f"**{i + 1}.** {track.title}" for i, track in enumerate(queue_list[:100]))
         embed.title = f'📜 Queue ({len(queue_list)} songs)'
         embed.description = description
         await ctx.send(embed=embed)
-
-    #@commands.command()
-    #async def autoplay(self, ctx, mode: str = 'enabled'):
-        #if not ctx.voice_client:
-            #return await ctx.send(embed=discord.Embed(color=red, description=":x: **Not connected to any voice channel.**"))
-
-        #vc: wavelink.Player = ctx.voice_client
-
-        #modes = {
-            #'enabled': wavelink.AutoPlayMode.enabled,
-            #'partial': wavelink.AutoPlayMode.partial,
-            #'disabled': wavelink.AutoPlayMode.disabled
-        #}
-
-        #if mode.lower() not in modes:
-            #return await ctx.send(embed=discord.Embed(color=red, description=":x: **Invalid mode.**"))
-
-        #vc.autoplay = modes[mode.lower()]
-        #embed = discord.Embed(color=green, description=f"🔀 **Autoplay mode set to** `{mode.lower()}`.")
-        #await ctx.send(embed=embed)
 
     @commands.command()
     async def autoplay(self, ctx):

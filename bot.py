@@ -19,7 +19,7 @@ red = 0xFF0000
 async def on_ready():
     print(f'{client.user} has connected to the following servers:\n')
     for server in client.guilds:
-        print(f'{server.name} (id: {server.id})')
+        print(f'- {server.name} (id: {server.id})')
 
         client.tree.copy_global_to(guild=server) # Copy global commands to the server
         await client.tree.sync(guild=server) # Sync the commands to the server
@@ -28,7 +28,7 @@ async def on_ready():
         if filename.endswith('.py'):
             await client.load_extension(f'cogs.{filename[:-3]}')
             try:
-                print(f'{filename[:-3]}')
+                print(f'- {filename[:-3]}')
             except Exception as e:
                 print(f'Failed to load {filename[:-3]}')
                 print(e)
