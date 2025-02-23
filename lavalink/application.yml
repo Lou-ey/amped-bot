@@ -3,10 +3,6 @@ plugins:
     providers: # Custom providers for track loading. This is the default
       - "ytsearch:\"%ISRC%\"" # Will be ignored if track does not have an ISRC. See https://en.wikipedia.org/wiki/International_Standard_Recording_Code
       - "ytsearch:%QUERY%" # Will be used if track has no ISRC or no track could be found for the ISRC
-      - "spsearch:\"%ISRC%\"" # Will be ignored if track does not have an ISRC. See https://en.wikipedia.org/wiki/International_Standard_Recording_Code
-      - "spsearch:%QUERY%" # Will be used if track has no ISRC or no track could be found for the ISRC
-      - "spplaylist:%URL%" # Will be used if track is a playlist
-      - "ytplaylist:%URL%" # Will be used if track is a playlist
     sources:
       spotify: true # Enable Spotify source
       applemusic: false # Enable Apple Music source
@@ -42,6 +38,8 @@ plugins:
       - ANDROID_VR
       - WEB
       - WEBEMBEDDED
+      - MWEB
+
 server: # REST and WS server
   port: 2333
   address: 0.0.0.0
@@ -51,7 +49,7 @@ server: # REST and WS server
 lavalink:
   plugins:
     # Replace VERSION with the current version as shown by the Releases tab or a long commit hash for snapshots.
-    - dependency: "dev.lavalink.youtube:youtube-plugin:1.11.3"
+    - dependency: "dev.lavalink.youtube:youtube-plugin:1.11.4"
       snapshot: false # Set to true if you want to use a snapshot version.
     - dependency: "com.github.topi314.lavasrc:lavasrc-plugin:4.4.1"
       repository: "https://maven.lavalink.dev/releases" # this is optional for lavalink v4.0.0-beta.5 or greater
@@ -94,6 +92,8 @@ metrics:
   prometheus:
     enabled: false
     endpoint: /metrics
+  jmx:
+    enabled: false
 
 sentry:
   dsn: ""

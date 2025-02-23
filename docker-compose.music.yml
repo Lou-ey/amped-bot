@@ -1,11 +1,11 @@
 services:
   lavalink:
-    image: "fredboat/lavalink:latest"
+    image: "ghcr.io/lavalink-devs/lavalink:latest" #"fredboat/lavalink:latest"
     container_name: "lavalink"
     restart: "unless-stopped"
     volumes:
       - "./lavalink/application.yml:/opt/Lavalink/application.yml"
-      - "./lavalink/plugins/youtube-plugin-1.11.3.jar:/opt/Lavalink/plugins/youtube-plugin-1.11.3.jar"
+      - "./lavalink/plugins/youtube-plugin-1.11.4.jar:/opt/Lavalink/plugins/youtube-plugin-1.11.4.jar"
       - "./lavalink/plugins/lavasrc-plugin-4.4.1.jar:/opt/Lavalink/plugins/lavasrc-plugin-4.4.1.jar"
     networks:
       - lavalink
@@ -13,7 +13,6 @@ services:
       - "2333"
     ports:
       - "2333:2333"
-
 networks:
   lavalink:
     driver: bridge
