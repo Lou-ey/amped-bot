@@ -5,8 +5,8 @@ services:
     restart: "unless-stopped"
     volumes:
       - "./lavalink/application.yml:/opt/Lavalink/application.yml"
-      - "./lavalink/plugins/youtube-plugin-1.11.4.jar:/opt/Lavalink/plugins/youtube-plugin-1.11.4.jar"
-      - "./lavalink/plugins/lavasrc-plugin-4.4.1.jar:/opt/Lavalink/plugins/lavasrc-plugin-4.4.1.jar"
+      - "./lavalink/plugins/youtube-plugin-1.12.0.jar:/opt/Lavalink/plugins/youtube-plugin-1.12.0.jar"
+      - "./lavalink/plugins/lavasrc-plugin-4.6.0.jar:/opt/Lavalink/plugins/lavasrc-plugin-4.6.0.jar"
     networks:
       - lavalink
     expose:
