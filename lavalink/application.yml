@@ -8,13 +8,17 @@ plugins:
       applemusic: false # Enable Apple Music source
       deezer: false # Enable Deezer source
       yandexmusic: false # Enable Yandex Music source
-      flowerytts: false # Enable Flowery TTs source
+      flowerytts: false # Enable Flowery TTS source
       youtube: true # Enable YouTube search source (https://github.com/topi314/LavaSearch)
+      vkmusic: false # Enable Vk Music source
+      tidal: false # Enable Tidal source
+      qobuz: false # Enabled qobuz source
     lyrics-sources:
       spotify: false # Enable Spotify lyrics source
       deezer: false # Enable Deezer lyrics source
       youtube: false # Enable YouTube lyrics source
       yandexmusic: false # Enable Yandex Music lyrics source
+      vkmusic: false # Enable Vk Music lyrics source
     spotify:
       clientId: "7d040277edda4b2b8ad1541e5625c4e4"
       clientSecret: "65a00bba04ed49bca8b3182d9f687068"
@@ -42,19 +46,20 @@ plugins:
       - WEB
       - WEBEMBEDDED
       - MWEB
+      - ANDROID_MUSIC
+      - ANDROID
 
 server: # REST and WS server
   port: 2333
   address: 0.0.0.0
   http2:
     enabled: false # Whether to enable HTTP/2 support
-
 lavalink:
   plugins:
     # Replace VERSION with the current version as shown by the Releases tab or a long commit hash for snapshots.
-    - dependency: "dev.lavalink.youtube:youtube-plugin:1.12.0"
+    - dependency: "dev.lavalink.youtube:youtube-plugin:1.13.2"
       snapshot: false # Set to true if you want to use a snapshot version.
-    - dependency: "com.github.topi314.lavasrc:lavasrc-plugin:4.6.0"
+    - dependency: "com.github.topi314.lavasrc:lavasrc-plugin:4.7.0"
       snapshot: false # set to true if you want to use snapshot builds (see below)
   server:
     password: "luisito"
@@ -77,6 +82,7 @@ lavalink:
       rotation: true
       channelMix: true
       lowPass: true
+    nonAllocatingFrameBuffer: false # Setting to true reduces the number of allocations made by each player at the expense of frame rebuilding (e.g. non-instantaneous volume changes)
     bufferDurationMs: 400 # The duration of the NAS buffer. Higher values fare better against longer GC pauses.
     frameBufferDurationMs: 5000 # How many milliseconds of audio to keep buffered
     opusEncodingQuality: 10 # Opus encoder quality.
@@ -107,11 +113,13 @@ sentry:
 logging:
   file:
     path: ./logs/
+
   level:
     root: INFO
     lavalink: INFO
     lavaplayer: INFO
     dev.lavalink.youtube.http.YoutubeOauth2Handler: INFO
+
   request:
     enabled: true
     includeClientInfo: true
@@ -119,6 +127,7 @@ logging:
     includeQueryString: true
     includePayload: true
     maxPayloadLength: 10000
+
   logback:
     rollingpolicy:
       max-file-size: 1GB
