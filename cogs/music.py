@@ -75,7 +75,7 @@ class Music(commands.Cog):
         elif source == 'soundcloud':
             return '<:soundcloud:1305561757653139506>'
         return ''
-
+    '''
     @commands.command()
     async def play(self, ctx, *, query: str):
         if not ctx.voice_client:
@@ -129,10 +129,80 @@ class Music(commands.Cog):
 
                 #await ctx.send(embed=track_added_embed)
                 await msg.edit(content='', embed=track_added_embed)
+    '''
+
+    @commands.command()
+    async def play(self, ctx, *, query: str):
+        if not ctx.voice_client:
+            try:
+                await ctx.invoke(self.connect)
+            except Exception as e:
+                return await ctx.send(
+                    embed=discord.Embed(
+                        color=red,
+                        description=f"❌ **Failed to connect to the voice channel.**\n`{str(e)}`"
+                    )
+                )
+
+        vc: wavelink.Player = ctx.voice_client
+
+        if not query:
+            return await ctx.send(
+                embed=discord.Embed(
+                    color=red,
+                    description="❌ **Please provide a song name or URL to play.**"
+                )
+            )
+
+        msg = await ctx.send(f"🔍 **Searching for** `{query}`...")
+
+        tracks: wavelink.Search = await wavelink.Playable.search(query)
+        if not tracks:
+            return await msg.edit(
+                content='',
+                embed=discord.Embed(
+                    color=red,
+                    description=f"❌ **No results found for `{query}`.**"
+                )
+            )
+
+        if isinstance(tracks, wavelink.Playlist):
+            # Adiciona todas as músicas à fila
+            for track in tracks.tracks:
+                await vc.queue.put_wait(track)
+
+            playlist_added_embed = discord.Embed(
+                color=green,
+                description=f"📥 **Playlist `{tracks.name}` added to queue with {len(tracks.tracks)} songs.**"
+            )
+            playlist_added_embed.set_footer(text=f"Requested by {ctx.author.display_name}")
+            await msg.edit(content='', embed=playlist_added_embed)
+
+            if not vc.playing:
+                await vc.play(await vc.queue.get_wait())
+                embed = self._now_playing_embed(vc.current, ctx)
+                await ctx.send(embed=embed)
+
+        else:
+            track: wavelink.Playable = tracks[0]
+            if not vc.playing:
+                await vc.play(track)
+                embed = self._now_playing_embed(track, ctx)
+                await msg.edit(content='', embed=embed)
+            else:
+                await vc.queue.put_wait(track)
+                track_added_embed = discord.Embed(
+                    color=green,
+                    description=f"📥 **{track.title}** added to the queue."
+                )
+                track_added_embed.set_footer(text=f"Requested by {ctx.author.display_name}")
+                await msg.edit(content='', embed=track_added_embed)
 
     def _now_playing_embed(self, track, ctx):
         """Cria um embed para a música que está a tocar."""
         vc: wavelink.Player = ctx.voice_client
+        current_queue_position = 1
+        total_queue_size = vc.queue.count + 1
         source = self.source_emoji(track.source)
         embed = discord.Embed(color=blue, title=f"{source}  🎶 Now Playing")
         embed.description = f"**{track.title}** by `{track.author}`"
@@ -140,7 +210,7 @@ class Music(commands.Cog):
         duration = ":red_circle: **LIVE**" if track.is_stream else time.strftime('%H:%M:%S',
                                                                                  time.gmtime(track.length / 1000))
         embed.add_field(name="Duration", value=duration)
-        embed.add_field(name="Position", value=f"{len(vc.queue) + 1}/{len(vc.queue) + 1}")
+        embed.add_field(name="Position", value=f"{current_queue_position}/{total_queue_size}")
         embed.set_footer(text=f"Requested by {ctx.author.display_name}")
 
         if track.artwork:
@@ -250,6 +320,8 @@ class Music(commands.Cog):
         vc.auto_play = wavelink.AutoPlayMode.enabled
     
         embed = discord.Embed(description="🔄 **Autoplay enabled.**", color=green)
+
+        await ctx.send(embed=embed)
 
 async def setup(bot):
     play_music = Music(bot)

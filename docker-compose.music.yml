@@ -1,6 +1,6 @@
 services:
   lavalink:
-    image: "ghcr.io/lavalink-devs/lavalink:latest" #"fredboat/lavalink:latest"
+    image: "ghcr.io/lavalink-devs/lavalink:latest" # Use the latest version of Lavalink
     container_name: "lavalink"
     restart: "unless-stopped"
     volumes:
