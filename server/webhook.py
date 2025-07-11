@@ -5,7 +5,7 @@ app = Flask(__name__)
 
 @app.route('/update-amped', methods=['POST'])
 def webhook():
-    subprocess.Popen(["/bin/bash", "/home/luis/Projects/discord-bot/server/update.sh"])
+    subprocess.Popen(["/bin/bash", "/home/luis/Projects/discord_bot/amped-bot/server/update.sh"])
     return "Update started!", 200
 
 if __name__ == '__main__':
