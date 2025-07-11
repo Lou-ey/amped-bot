@@ -8,12 +8,10 @@ intents = discord.Intents.all()
 intents.members = True
 intents.message_content = True
 
-
 client = commands.Bot(command_prefix='!', intents=intents)
 
 green = 0x00FF00
 red = 0xFF0000
-
 
 @client.event
 async def on_ready():
