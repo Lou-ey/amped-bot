@@ -34,6 +34,7 @@ plugins:
     enabled: true
     oauth:
       enabled: true # Whether this source can be used.
+      refreshToken: "1//03OyvxPTh8SuNCgYIARAAGAMSNwF-L9Irp0gCD-O8My4WkhEohPsKEM-pldknPNwbXDilWPSWeieJ6osfbugbxqBkxKNXaar_mvM"
     allowSearch: true # Whether "ytsearch:" and "ytmsearch:" can be used.
     allowDirectVideoIds: true # Whether just video IDs can match. If false, only complete URLs will be loaded.
     allowDirectPlaylistIds: true # Whether just playlist IDs can match. If false, only complete URLs will be loaded.
@@ -41,25 +42,28 @@ plugins:
     searchEnabled: true # Whether search queries are enabled.
     mixLoadLimit: 10 # How many pages of a mix to load. Each page has 100 items.
     clients:
+      - TV
+      - TVHTML5EMBEDDED
       - MUSIC
-      - ANDROID_VR
       - WEB
-      - WEBEMBEDDED
       - MWEB
-      - ANDROID_MUSIC
       - ANDROID
+      - ANDROID_VR
+      - ANDROID_MUSIC
+      - WEBEMBEDDED
+      - IOS
 
 server: # REST and WS server
   port: 2333
   address: 0.0.0.0
   http2:
-    enabled: false # Whether to enable HTTP/2 support
+    enabled: true # Whether to enable HTTP/2 support
 lavalink:
   plugins:
     # Replace VERSION with the current version as shown by the Releases tab or a long commit hash for snapshots.
-    - dependency: "dev.lavalink.youtube:youtube-plugin:1.13.2"
+    - dependency: "dev.lavalink.youtube:youtube-plugin:1.13.3"
       snapshot: false # Set to true if you want to use a snapshot version.
-    - dependency: "com.github.topi314.lavasrc:lavasrc-plugin:4.7.0"
+    - dependency: "com.github.topi314.lavasrc:lavasrc-plugin:4.7.2"
       snapshot: false # set to true if you want to use snapshot builds (see below)
   server:
     password: "luisito"

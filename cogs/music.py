@@ -3,6 +3,10 @@ import discord
 from discord.ext import commands
 import wavelink
 import time
+import asyncio
+import random
+
+from cogs.soundboard import loop_tasks
 
 green = 0x00FF00
 red = 0xFF0000
@@ -75,61 +79,6 @@ class Music(commands.Cog):
         elif source == 'soundcloud':
             return '<:soundcloud:1305561757653139506>'
         return ''
-    '''
-    @commands.command()
-    async def play(self, ctx, *, query: str):
-        if not ctx.voice_client:
-            try:
-                await ctx.invoke(self.connect)
-            except Exception as e:
-                return await ctx.send(
-                    embed=discord.Embed(color=red,
-                                        description=f"❌ **Failed to connect to the voice channel.**\n`{str(e)}`")
-                )
-
-        vc: wavelink.Player = ctx.voice_client
-
-        if not query:
-            return await ctx.send(
-                embed=discord.Embed(color=red, description="❌ **Please provide a song name or URL to play.**")
-            )
-
-        msg = await ctx.send(f"🔍 **Searching for** `{query}`...")
-
-        tracks: wavelink.Search = await wavelink.Playable.search(query)
-        if not tracks:
-            return await msg.edit(content='', embed=discord.Embed(color=red, description=f"❌ **No results found for `{query}`.**"))
-
-        if isinstance(tracks, wavelink.Playlist):
-            # Adiciona todas as músicas à fila
-            for track in tracks.tracks:
-                await vc.queue.put_wait(track)
-
-            playlist_added_embed = discord.Embed(color=green,
-                                  description=f"📥 **Playlist `{tracks.name}` added to queue with {len(tracks.tracks)} songs.**")
-            playlist_added_embed.set_footer(text=f"Requested by {ctx.author.display_name}")
-
-            await msg.edit(content='', embed=playlist_added_embed)
-
-            if not vc.playing: # Se não estiver a tocar nada, toca a primeira música da playlist
-                await vc.play(await vc.queue.get_wait())
-                embed = self._now_playing_embed(vc.current, ctx)
-                await ctx.send(embed=embed)
-
-        else: # Se for apenas uma música
-            track: wavelink.Playable = tracks[0]
-            if not vc.playing: # Toca a música
-                await vc.play(track)
-                embed = self._now_playing_embed(track, ctx)
-                await msg.edit(content='', embed=embed)
-            elif vc.playing:
-                await vc.queue.put_wait(track)
-                track_added_embed = discord.Embed(color=green, description=f"📥 **{track.title}** added to the queue.")
-                track_added_embed.set_footer(text=f"Requested by {ctx.author.display_name}")
-
-                #await ctx.send(embed=track_added_embed)
-                await msg.edit(content='', embed=track_added_embed)
-    '''
 
     @commands.command()
     async def play(self, ctx, *, query: str):
@@ -221,6 +170,12 @@ class Music(commands.Cog):
     @commands.Cog.listener()
     async def on_wavelink_track_end(self, payload: wavelink.TrackEndEventPayload):
         vc: wavelink.Player = payload.player
+        # track = payload.track
+
+        #if getattr(track.extras, "is_soundboard", False):
+            # Se for um som do soundboard, não faz nada
+        #    return
+
         source = self.source_emoji(payload.track.source)
 
         if vc.queue.is_empty and vc.auto_queue:
@@ -248,6 +203,12 @@ class Music(commands.Cog):
 
     @commands.Cog.listener()
     async def on_wavelink_inactive_player(self, player: wavelink.Player):
+        # track = player.current
+
+        # if getattr(track.extras, "is_soundboard", False):
+            # Se for um som do soundboard, não faz nada
+        #    return
+
         await player.disconnect(force=True)
         embed = discord.Embed(description=":wave: **Disconnected due to inactivity.**", color=green)
         await player.text_channel.send(embed=embed)
@@ -322,6 +283,7 @@ class Music(commands.Cog):
         embed = discord.Embed(description="🔄 **Autoplay enabled.**", color=green)
 
         await ctx.send(embed=embed)
+
 
 async def setup(bot):
     play_music = Music(bot)
