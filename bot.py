@@ -4,6 +4,8 @@ from discord.ext import commands
 
 TOKEN = os.environ['TOKEN']
 
+print(TOKEN)
+
 intents = discord.Intents.all()
 intents.members = True
 intents.message_content = True
