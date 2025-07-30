@@ -6,7 +6,7 @@ services:
     volumes:
       - "./lavalink/application.yml:/opt/Lavalink/application.yml"
       - "./lavalink/plugins/youtube-plugin-1.13.3.jar:/opt/Lavalink/plugins/youtube-plugin-1.13.3.jar"
-      - "./lavalink/plugins/lavasrc-plugin-4.7.2.jar:/opt/Lavalink/plugins/lavasrc-plugin-4.7.2.jar"
+      - "./lavalink/plugins/lavasrc-plugin-4.7.3.jar:/opt/Lavalink/plugins/lavasrc-plugin-4.7.3.jar"
     networks:
       - lavalink
     expose:
