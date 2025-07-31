@@ -1,10 +1,12 @@
 import discord
-from discord import Interaction, Embed, Message
+from discord import Embed, message
 from discord.ext import commands
 import wavelink
 import time
 import asyncio
 from datetime import timedelta
+
+from flask import ctx
 
 green = 0x00FF00
 red = 0xFF0000
@@ -99,7 +101,8 @@ class Music(commands.Cog):
         while vc.playing and track == vc.current:
             pos = vc.position
             bar = generate_progress_bar(pos, track.length)
-            embed = self._now_playing_embed(track, vc)
+            requester = getattr(vc, "current_requester", None)
+            embed = self._now_playing_embed(track, vc, requester)
             embed.add_field(
                 name="Progress",
                 value=f"{bar}\n`{format_time(pos)} / {format_time(track.length)}`",
@@ -138,11 +141,11 @@ class Music(commands.Cog):
                 )
             )
 
-        msg = await ctx.send(f"🔍 **Searching for** `{query}`...", suppress_embeds=True)
+        search_msg = await ctx.send(f"🔍 **Searching for** `{query}`...", suppress_embeds=True)
 
         tracks: wavelink.Search = await wavelink.Playable.search(query)
         if not tracks:
-            return await msg.edit(
+            return await search_msg.edit(
                 content='',
                 embed=discord.Embed(
                     color=red,
@@ -162,27 +165,28 @@ class Music(commands.Cog):
                 description=f"📥 **Playlist `{tracks.name}` added to queue with {len(tracks.tracks)} songs.**"
             )
             playlist_added_embed.set_footer(text=f"Requested by {ctx.author.display_name}")
-            await msg.edit(content='', embed=playlist_added_embed)
+            await search_msg.edit(content='', embed=playlist_added_embed)
 
             if not vc.playing:
                 await vc.play(await vc.queue.get_wait())
-                embed = self._now_playing_embed(vc.current, ctx)
-                await ctx.send(embed=embed)
-                asyncio.create_task(self.start_progress_updater(vc, vc.current, msg))
+
         else:
             track: wavelink.Playable = tracks[0]
-            track.requester = ctx.author
+            vc.current_requester = ctx.author
             track.position_in_queue = vc.queue.count + (1 if vc.current else 0)
+
             if not vc.playing:
                 await vc.play(track)
-                embed = self._now_playing_embed(track, ctx)
-                await msg.edit(content='', embed=embed)
-                asyncio.create_task(self.start_progress_updater(vc, track, msg))
+                await search_msg.delete()
+                #embed = self._now_playing_embed(track, ctx)
+                #await msg.edit(content='', embed=embed)
+                #asyncio.create_task(self.start_progress_updater(vc, track, search_msg))
+
             else:
                 await vc.queue.put_wait(track)
                 track_added_embed = discord.Embed(
                     color=green,
-                    description=f"📥 **{track.title}** added to the queue."
+                    description=f"📥 **{track.title}** by `{track.author}` added to the queue."
                 )
 
                 if vc.queue.count == 1:
@@ -191,22 +195,11 @@ class Music(commands.Cog):
                     pos_text = f"{track.position_in_queue}"
                 track_added_embed.add_field(name="Position in queue", value=pos_text)
 
-                track_added_embed.set_footer(text=f"Requested by {ctx.author.display_name}",
-                                             icon_url=ctx.author.display_avatar.url)
-                await msg.edit(content='', embed=track_added_embed)
+                track_added_embed.set_footer(text=f"Requested by {ctx.author.display_name}", icon_url=ctx.author.display_avatar.url)
+                await search_msg.edit(content='', embed=track_added_embed)
 
-    def _now_playing_embed(self, track, ctx_or_vc):
+    def _now_playing_embed(self, track, vc, requester):
         """Cria um embed para a música que está a tocar."""
-        #vc: wavelink.Player = ctx.voice_client
-        if isinstance(ctx_or_vc, commands.Context):
-            vc = ctx_or_vc.voice_client
-            requester = ctx_or_vc.author
-        else:
-            vc = ctx_or_vc
-            requester = getattr(track, 'requester', None)
-
-        #current_queue_position = getattr(track, 'position_in_queue', 1)
-        #total_queue_size = vc.queue.count + (1 if vc.current else 0)
         source = self.source_emoji(track.source)
 
         embed = discord.Embed(color=blue, title=f"{source}  🎶 Now Playing")
@@ -215,8 +208,8 @@ class Music(commands.Cog):
         duration = ":red_circle: **LIVE**" if track.is_stream else time.strftime('%H:%M:%S',
                                                                                  time.gmtime(track.length / 1000))
         embed.add_field(name="Duration", value=duration)
-        if vc.queue.count > 0:
-            next_song = vc.queue.peek(0)
+        if vc.queue.count > 0 or vc.auto_queue.count > 0:
+            next_song = vc.queue.peek(0) if vc.queue.count > 0 else vc.auto_queue.peek(0)
             embed.add_field(name="Next in queue", value=f"**{next_song.title}** by `{next_song.author}`")
         else:
             embed.add_field(name="Next in queue", value="No more songs in the queue.")
@@ -238,43 +231,48 @@ class Music(commands.Cog):
             next_track.position_in_queue = vc.queue.count + 1
             await vc.play(next_track)
 
-            embed = self._now_playing_embed(next_track, vc)
-            message = await vc.text_channel.send(embed=embed)
-            asyncio.create_task(self.start_progress_updater(vc, next_track, message))
         elif vc.autoplay == wavelink.AutoPlayMode.enabled:
-            if vc.auto_queue.is_empty and not vc.playing:
-                waiting_msg = await vc.text_channel.send(
-                    embed=discord.Embed(description="⏳ **Searching for recommended tracks...**", color=blue)
+            if vc.queue.is_empty:
+                embed = discord.Embed(
+                    description="🔄 **Autoplay is enabled, recommended tracks will be played.**",
+                    color=blue
                 )
-
-                async def wait_for_autoplay():
-                    next_track = await vc.auto_queue.get_wait()
-                    await vc.play(next_track)
-
-                    embed = self._now_playing_embed(next_track, vc)
-                    msg = await vc.text_channel.send(embed=embed)
-                    asyncio.create_task(self.start_progress_updater(vc, next_track, msg))
-
-                    # apaga a mensagem de waiting
-                    try:
-                        await waiting_msg.delete()
-                    except discord.NotFound:
-                        pass
-
-                asyncio.create_task(wait_for_autoplay())
-
-            else:
+                await vc.text_channel.send(embed=embed)
+            if vc.auto_queue.is_empty:
+                # pede já a próxima recomendação
                 next_track = await vc.auto_queue.get_wait()
-                await vc.play(next_track)
 
-                embed = self._now_playing_embed(next_track, vc)
-                msg = await vc.text_channel.send(embed=embed)
-                asyncio.create_task(self.start_progress_updater(vc, next_track, msg))
+                if vc.playing and vc.auto_queue.count > 0:
+                    await vc.auto_queue.put_wait(next_track)
+                else:
+                    next_track.position_in_queue = vc.auto_queue.count + 1
+                    await vc.play(next_track)
+            else:
+                if vc.playing:
+                    next_track = await vc.auto_queue.get_wait()
+                    await vc.auto_queue.put_wait(next_track)
+                else:
+                    next_track = await vc.auto_queue.get_wait()
+                    next_track.position_in_queue = vc.auto_queue.count + 1
+                    await vc.play(next_track)
 
         else:
             await vc.text_channel.send(
                 embed=discord.Embed(description="🏁 **End of the queue.**", color=green)
             )
+
+    @commands.Cog.listener()
+    async def on_wavelink_track_start(self, payload: wavelink.TrackStartEventPayload):
+        vc: wavelink.Player = payload.player
+        track = payload.track
+
+        requester = getattr(vc, "current_requester", None)
+        if requester is None:
+            requester = getattr(track, "requester", None)
+
+        embed = self._now_playing_embed(track, vc, requester)
+        msg = await vc.text_channel.send(embed=embed)
+        asyncio.create_task(self.start_progress_updater(vc, track, msg))
 
     @commands.Cog.listener()
     async def on_wavelink_inactive_player(self, player: wavelink.Player):
@@ -329,15 +327,28 @@ class Music(commands.Cog):
         vc: wavelink.Player = ctx.voice_client
         embed = discord.Embed(color=green)
 
-        if not vc or vc.queue.is_empty or vc.auto_queue.is_empty:
+        if not vc or (vc.queue.is_empty and vc.auto_queue.is_empty):
             embed.description = '📭 **The queue is empty.**'
             await ctx.send(embed=embed)
             return
 
-        queue_list = list(vc.queue.copy())
-        description = '\n'.join(f"**{i + 1}.** {track.title}" for i, track in enumerate(queue_list[:100]))
-        embed.title = f'📜 Queue ({len(queue_list)} songs)'
-        embed.description = description
+        description = ""
+
+        # Queue normal
+        if not vc.queue.is_empty:
+            queue_list = list(vc.queue.copy())
+            description += "**🎶 Normal Queue:**\n"
+            description += '\n'.join(f"**{i + 1}.** {track.title}" for i, track in enumerate(queue_list[:50]))
+            description += "\n\n"
+
+        # Auto Queue
+        if not vc.auto_queue.is_empty:
+            auto_queue_list = list(vc.auto_queue.copy())
+            description += "**🤖 Auto Queue:**\n"
+            description += '\n'.join(f"**{i + 1}.** {track.title}" for i, track in enumerate(auto_queue_list[:50]))
+
+        embed.title = f'📜 Combined Queue'
+        embed.description = description.strip()
         await ctx.send(embed=embed)
 
     @commands.command()
