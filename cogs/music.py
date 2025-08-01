@@ -6,8 +6,6 @@ import time
 import asyncio
 from datetime import timedelta
 
-from flask import ctx
-
 green = 0x00FF00
 red = 0xFF0000
 blue = 0x0080FF
@@ -232,12 +230,6 @@ class Music(commands.Cog):
             await vc.play(next_track)
 
         elif vc.autoplay == wavelink.AutoPlayMode.enabled:
-            if vc.queue.is_empty:
-                embed = discord.Embed(
-                    description="🔄 **Autoplay is enabled, recommended tracks will be played.**",
-                    color=blue
-                )
-                await vc.text_channel.send(embed=embed)
             if vc.auto_queue.is_empty:
                 # pede já a próxima recomendação
                 next_track = await vc.auto_queue.get_wait()
