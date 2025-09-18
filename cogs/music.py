@@ -5,6 +5,11 @@ import wavelink
 import time
 import asyncio
 from datetime import timedelta
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+PASSWORD = os.getenv("PASSWORD")
 
 green = 0x00FF00
 red = 0xFF0000
@@ -37,7 +42,7 @@ class Music(commands.Cog):
         nodes = [wavelink.Node(
             identifier='MAIN',
             uri='http://localhost:2333',
-            password='luisito'
+            password=PASSWORD,
         )]
         await wavelink.Pool.connect(nodes=nodes, client=self.bot, cache_capacity=100)
 
