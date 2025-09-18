@@ -23,9 +23,15 @@ def generate_progress_bar(current, total, length=20):
             proportion = current / total # the
 
     #proportion = current / total if total > 0 else 0
-    filled_length = int(length * proportion)
+    exact_filled = length * proportion
+    filled_length = int(exact_filled)
+    remainder = exact_filled - filled_length
+
+    partial_block = '▒' if remainder >= 0.5 else ''
+
     empty = length - filled_length
-    return '[' + '▮' * filled_length + '▯' * empty + ']'
+
+    return '⌈' + '█' * filled_length + partial_block + '░' * empty + '⌉'
 
 class Music(commands.Cog):
     vc: wavelink.Player = None
