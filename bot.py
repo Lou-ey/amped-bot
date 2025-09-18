@@ -17,7 +17,8 @@ red = 0xFF0000
 
 @client.event
 async def on_ready():
-    activity = discord.Activity(type=discord.ActivityType.listening, name='/help')
+    activity = discord.Activity(type=discord.ActivityType.listening, name='!help')
+    await client.change_presence(activity=activity)
     print(f'{client.user} has connected to the following servers:\n')
     for server in client.guilds:
         print(f'- {server.name} (id: {server.id})')
