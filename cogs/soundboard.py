@@ -14,7 +14,8 @@ response = requests.get(api_url).json()
 
 for file in response:
     if file["name"].endswith(('.mp3', '.wav', '.ogg')):
-        url = f"https://cdn.jsdelivr.net/gh/{repo_owner}/{repo_name}@{branch}/{path}/{file['name']}"
+        no_spaced_file_name = file["name"].replace(" ", "%20")
+        url = f"https://cdn.jsdelivr.net/gh/{repo_owner}/{repo_name}@{branch}/{path}/{no_spaced_file_name}"
         key_name = file["name"].split(".")[0]
         sound_effects[key_name] = url
 
