@@ -233,10 +233,10 @@ class Music(commands.Cog):
     @commands.Cog.listener()
     async def on_wavelink_track_end(self, payload: wavelink.TrackEndEventPayload):
         vc: wavelink.Player = payload.player
-        track = payload.track
+        #track = payload.track
 
-        if getattr(track, "meta", {}).get("soundboard"):
-            return  # Ignorar sons do soundboard
+        #if getattr(track, "meta", {}).get("soundboard"):
+        #    return  # Ignorar sons do soundboard
 
         if not vc.queue.is_empty:
             next_track = await vc.queue.get_wait()
@@ -269,10 +269,10 @@ class Music(commands.Cog):
 
     @commands.Cog.listener()
     async def on_wavelink_track_start(self, payload: wavelink.TrackStartEventPayload):
-        track = payload.track
+        #track = payload.track
 
-        if getattr(track, "meta", {}).get("soundboard"):
-            return  # Ignorar sons do soundboard
+        #if getattr(track, "meta", {}).get("soundboard"):
+        #    return  # Ignorar sons do soundboard
 
         vc: wavelink.Player = payload.player
         track = payload.track
