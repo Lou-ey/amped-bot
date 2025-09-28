@@ -182,6 +182,7 @@ class Music(commands.Cog):
 
         else:
             track: wavelink.Playable = tracks[0]
+            track.requester = ctx.author
             vc.current_requester = ctx.author
             track.position_in_queue = vc.queue.count + (1 if vc.current else 0)
 
