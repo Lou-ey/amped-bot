@@ -178,7 +178,7 @@ class Music(commands.Cog):
             if not vc.playing:
                 first_track = await vc.queue.get_wait()
                 vc.current_requester = first_track.author
-                await vc.play(await vc.queue.get_wait())
+                await vc.play(first_track)
 
         else:
             track: wavelink.Playable = tracks[0]
