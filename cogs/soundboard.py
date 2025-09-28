@@ -43,7 +43,7 @@ class SoundSelect(discord.ui.Select):
             )
 
         track = results[0]
-        track.meta = {"soundboard": True}
+        setattr(track, "meta", {"soundboard": True})
         await self.vc.play(track, populate=False)
         await interaction.response.send_message(f"🔊 A tocar: **{sound_name}**", ephemeral=True)
 
