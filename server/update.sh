@@ -1,9 +1,12 @@
 #!/bin/bash
 
+set -e
+
 cd /home/luis/Projects/discord_bot/amped-bot || exit
 
 echo -e "\033[1;33mGit pulling...\033[0m"
 git pull origin master
+git reset --hard origin/master
 if [ $? -eq 0 ]; then
     echo -e "\033[0;32mGit pull successful.\033[0m"
 else
