@@ -237,7 +237,7 @@ class Music(commands.Cog):
         if not vc.queue.is_empty:
             next_track = await vc.queue.get_wait()
             next_track.position_in_queue = vc.queue.count + 1
-            vc.current_requester = getattr(vc, "requester", None)
+            vc.current_requester = getattr(next_track, "requester", None)
             await vc.play(next_track)
 
         elif vc.autoplay == wavelink.AutoPlayMode.enabled:
@@ -249,7 +249,7 @@ class Music(commands.Cog):
                     await vc.auto_queue.put_wait(next_track)
                 else:
                     next_track.position_in_queue = vc.auto_queue.count + 1
-                    vc.current_requester = getattr(vc, "requester", None)
+                    vc.current_requester = getattr(next_track, "requester", None)
                     await vc.play(next_track)
             else:
                 if vc.playing:
@@ -258,7 +258,7 @@ class Music(commands.Cog):
                 else:
                     next_track = await vc.auto_queue.get_wait()
                     next_track.position_in_queue = vc.auto_queue.count + 1
-                    vc.current_requester = getattr(vc, "requester", None)
+                    vc.current_requester = getattr(next_track, "requester", None)
                     await vc.play(next_track)
 
         else:
