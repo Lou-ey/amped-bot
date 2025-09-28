@@ -7,6 +7,7 @@ import asyncio
 from datetime import timedelta
 from dotenv import load_dotenv
 import os
+import aiohttp
 
 load_dotenv()
 PASSWORD = os.getenv("PASSWORD")
@@ -393,8 +394,26 @@ class Music(commands.Cog):
 
         await ctx.send(embed=discord.Embed(color=color, description=msg))
 
+    async def get_lyrics_from_lavalink(title, author):
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                    f"http://localhost:2333/lyrics",
+                    params={"title": title, "author": author}
+            ) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    return data.get("lyrics", "❌ Letras não encontradas.")
+                return "❌ Não foi possível obter letras."
 
+    @commands.command()
+    async def lyrics(self, ctx):
+        vc: wavelink.Player = ctx.voice_client
+        if not vc or not vc.current:
+            return await ctx.send("❌ Nenhuma música está a tocar.")
 
+        track = vc.current
+        letras = await self.get_lyrics_from_lavalink(track.title)
+        await ctx.send(embed=discord.Embed(title=f"📜 Letras: {track.title}", description=letras[:4000]))
 
 async def setup(bot):
     play_music = Music(bot)
