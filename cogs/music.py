@@ -172,7 +172,7 @@ class Music(commands.Cog):
                 color=green,
                 description=f"📥 **Playlist `{tracks.name}` added to queue with {len(tracks.tracks)} songs.**"
             )
-            playlist_added_embed.set_footer(text=f"Requested by {ctx.author.display_name}", icon_url=ctx.author.avatar_url)
+            playlist_added_embed.set_footer(text=f"Requested by {ctx.author.display_name}", icon_url=ctx.author.display_avatar.url)
             await search_msg.edit(content='', embed=playlist_added_embed)
 
             if not vc.playing:
