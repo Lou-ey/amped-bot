@@ -1,13 +1,11 @@
-import os
 import discord
 from discord.ext import commands
 import wavelink
 import requests
 
-repo_owner = "Lou-ey" # os.environ['REPO_OWNER']
-repo_name = "discord-sounds" # os.environ['REPO_NAME']
-path = ""
-token = None # os.environ['TOKEN']
+repo_owner = "Lou-ey"
+repo_name = "discord-sounds"
+path = ""  # pasta do repositório, vazio para raiz
 branch = "main"
 
 sound_effects = {}
@@ -21,20 +19,7 @@ for file in response:
         key_name = file["name"].split(".")[0]
         sound_effects[key_name] = url
 
-print(sound_effects)
-
-class SoundboardView(discord.ui.View):
-    def __init__(self, vc: wavelink.Player):
-        super().__init__(timeout=None)
-        self.vc = vc
-
-        # Adiciona botão para cada som
-        for name, url in sound_effects.items():
-            self.add_item(SoundButton(label=name, sound_url=url, vc=vc))
-
-        # Botão de parar
-        self.add_item(StopSoundButton(vc))
-
+print(sound_effects)  # Só para verificar
 
 class SoundButton(discord.ui.Button):
     def __init__(self, label: str, sound_url: str, vc: wavelink.Player):
@@ -43,7 +28,6 @@ class SoundButton(discord.ui.Button):
         self.vc = vc
 
     async def callback(self, interaction: discord.Interaction):
-        # Toca o som escolhido
         if not self.vc.connected:
             await self.vc.connect(reconnect=True)
 
@@ -55,20 +39,39 @@ class SoundButton(discord.ui.Button):
 
         track = results[0]
         await self.vc.play(track, populate=False)
-
         await interaction.response.send_message(
             f"🔊 A tocar: **{self.label}**", ephemeral=True
         )
 
-
 class StopSoundButton(discord.ui.Button):
     def __init__(self, vc: wavelink.Player):
-        super().__init__(style=discord.ButtonStyle.danger, label="⏹️ Parar Som")
+        super().__init__(style=discord.ButtonStyle.danger, label="Parar")
         self.vc = vc
 
     async def callback(self, interaction: discord.Interaction):
-        await self.vc.stop()
-        await interaction.response.send_message("⏹️ Som parado.", ephemeral=True)
+        if self.vc.is_playing():
+            await self.vc.stop()
+            await interaction.response.send_message("⏹ Som parado!", ephemeral=True)
+        else:
+            await interaction.response.send_message("❌ Nenhum som a tocar.", ephemeral=True)
+
+class SoundboardViewManager:
+    def __init__(self, vc: wavelink.Player):
+        self.vc = vc
+        self.views = self._create_views()
+
+    def _create_views(self):
+        buttons = list(sound_effects.items())
+        chunk_size = 24  # 24 sons + 1 Stop = 25
+        views = []
+
+        for i in range(0, len(buttons), chunk_size):
+            view = discord.ui.View(timeout=None)
+            for name, url in buttons[i:i+chunk_size]:
+                view.add_item(SoundButton(label=name, sound_url=url, vc=self.vc))
+            view.add_item(StopSoundButton(self.vc))
+            views.append(view)
+        return views
 
 
 class Soundboard(commands.Cog):
@@ -90,8 +93,10 @@ class Soundboard(commands.Cog):
             color=discord.Color.blue()
         )
 
-        await ctx.send(embed=embed, view=SoundboardView(vc))
-
+        manager = SoundboardViewManager(vc)
+        for view in manager.views:
+            await ctx.send(embed=embed, view=view)
 
 async def setup(bot):
     await bot.add_cog(Soundboard(bot))
+
