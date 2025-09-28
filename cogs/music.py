@@ -265,6 +265,11 @@ class Music(commands.Cog):
 
     @commands.Cog.listener()
     async def on_wavelink_track_start(self, payload: wavelink.TrackStartEventPayload):
+        track = payload.track
+
+        if track.meta.get("soundboard"):
+            return  # Ignorar sons do soundboard
+
         vc: wavelink.Player = payload.player
         track = payload.track
 
