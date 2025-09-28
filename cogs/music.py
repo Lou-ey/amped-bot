@@ -188,9 +188,6 @@ class Music(commands.Cog):
             if not vc.playing:
                 await vc.play(track)
                 await search_msg.delete()
-                #embed = self._now_playing_embed(track, ctx)
-                #await msg.edit(content='', embed=embed)
-                #asyncio.create_task(self.start_progress_updater(vc, track, search_msg))
 
             else:
                 await vc.queue.put_wait(track)
@@ -235,14 +232,11 @@ class Music(commands.Cog):
     @commands.Cog.listener()
     async def on_wavelink_track_end(self, payload: wavelink.TrackEndEventPayload):
         vc: wavelink.Player = payload.player
-        #track = payload.track
-
-        #if getattr(track, "meta", {}).get("soundboard"):
-        #    return  # Ignorar sons do soundboard
 
         if not vc.queue.is_empty:
             next_track = await vc.queue.get_wait()
             next_track.position_in_queue = vc.queue.count + 1
+            vc.current_requester = getattr(vc, "requester", None)
             await vc.play(next_track)
 
         elif vc.autoplay == wavelink.AutoPlayMode.enabled:
@@ -254,6 +248,7 @@ class Music(commands.Cog):
                     await vc.auto_queue.put_wait(next_track)
                 else:
                     next_track.position_in_queue = vc.auto_queue.count + 1
+                    vc.current_requester = getattr(vc, "requester", None)
                     await vc.play(next_track)
             else:
                 if vc.playing:
@@ -262,6 +257,7 @@ class Music(commands.Cog):
                 else:
                     next_track = await vc.auto_queue.get_wait()
                     next_track.position_in_queue = vc.auto_queue.count + 1
+                    vc.current_requester = getattr(vc, "requester", None)
                     await vc.play(next_track)
 
         else:
@@ -271,17 +267,13 @@ class Music(commands.Cog):
 
     @commands.Cog.listener()
     async def on_wavelink_track_start(self, payload: wavelink.TrackStartEventPayload):
-        #track = payload.track
-
-        #if getattr(track, "meta", {}).get("soundboard"):
-        #    return  # Ignorar sons do soundboard
 
         vc: wavelink.Player = payload.player
         track = payload.track
 
-        requester = getattr(vc, "current_requester", None)
-        if requester is None:
-            requester = getattr(track, "requester", None)
+        requester = getattr(vc, "current_requester", None) or getattr(track, "requester", None)
+        #if requester is None:
+        #    requester = getattr(track, "requester", None)
 
         embed = self._now_playing_embed(track, vc, requester)
         msg = await vc.text_channel.send(embed=embed)
