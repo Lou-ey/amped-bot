@@ -25,9 +25,8 @@ def generate_progress_bar(current, total, length=20):
         if total - current <= 1000:
             proportion = 1
         else:
-            proportion = current / total # the
+            proportion = current / total
 
-    #proportion = current / total if total > 0 else 0
     exact_filled = length * proportion
     filled_length = int(exact_filled)
     remainder = exact_filled - filled_length
@@ -389,6 +388,8 @@ class Music(commands.Cog):
             )
 
         await ctx.send(embed=discord.Embed(color=color, description=msg))
+
+
 
 
 async def setup(bot):
