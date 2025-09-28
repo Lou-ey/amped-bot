@@ -14,7 +14,6 @@ else
     exit 1
 fi
 
-
 echo -e "\033[1;33mRestarting bot service...\033[0m"
 sudo systemctl restart bot.service
 if [ $? -eq 0 ]; then
