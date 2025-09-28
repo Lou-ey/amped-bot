@@ -233,6 +233,9 @@ class Music(commands.Cog):
     @commands.Cog.listener()
     async def on_wavelink_track_end(self, payload: wavelink.TrackEndEventPayload):
         vc: wavelink.Player = payload.player
+        track = payload.track
+        if track.meta.get("soundboard"):
+            return  # Ignorar sons do soundboard
 
         if not vc.queue.is_empty:
             next_track = await vc.queue.get_wait()
