@@ -39,6 +39,7 @@ async def on_ready():
             except Exception as e:
                 print(f"Failed to load '{cog_name}': {e}")
 
+
 @client.event
 async def on_message(message):
     await client.process_commands(message)
