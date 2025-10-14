@@ -26,14 +26,19 @@ async def on_ready():
         client.tree.copy_global_to(guild=server) # Copy global commands to the server
         await client.tree.sync(guild=server) # Sync the commands to the server
     print(f'\nCogs loaded:')
+    # verify that the cogs already loaded
     for filename in os.listdir('./cogs'):
         if filename.endswith('.py'):
-            await client.load_extension(f'cogs.{filename[:-3]}')
+            cog_name = f'cogs.{filename[:-3]}'
             try:
-                print(f'- {filename[:-3]}')
+                if cog_name in client.extensions:
+                    print(f'Cog {filename[:-3]} already loaded, ignoring...')
+                else:
+                    await client.load_extension(cog_name)
+                    print(f'Loaded cog: {filename[:-3]}')
             except Exception as e:
-                print(f'Failed to load {filename[:-3]}')
-                print(e)
+                print(f"Failed to load '{cog_name}': {e}")
+
 
 @client.event
 async def on_message(message):
