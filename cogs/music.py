@@ -393,6 +393,19 @@ class Music(commands.Cog):
 
         await ctx.send(embed=discord.Embed(color=color, description=msg))
 
+    @commands.command()
+    async def shuffle(self, ctx):
+        vc: wavelink.Player = ctx.voice_client
+        if not vc or vc.queue.is_empty:
+            return await ctx.send(
+                embed=discord.Embed(color=red, description="❌ **The queue is empty.**")
+            )
+
+        vc.queue.shuffle()
+        await ctx.send(
+            embed=discord.Embed(color=green, description="🔀 **Queue shuffled.**")
+        )
+
 async def setup(bot):
     play_music = Music(bot)
     await bot.add_cog(play_music)
