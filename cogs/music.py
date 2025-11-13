@@ -7,6 +7,7 @@ import asyncio
 from datetime import timedelta
 from dotenv import load_dotenv
 import os
+import random
 
 load_dotenv()
 PASSWORD = os.getenv("PASSWORD")
@@ -128,6 +129,12 @@ class Music(commands.Cog):
     @commands.command()
     async def play(self, ctx, *, query: str):
         await ctx.message.edit(suppress=True)
+
+        shuffle = False
+        if "-s" in query.lower():
+            shuffle = True
+            query = query.replace("-s", "").strip()
+
         if not ctx.voice_client:
             try:
                 await ctx.invoke(self.connect)
@@ -162,6 +169,11 @@ class Music(commands.Cog):
             )
 
         if isinstance(tracks, wavelink.Playlist):
+
+            playlist_tracks = tracks.tracks
+
+            if shuffle:
+                random.shuffle(playlist_tracks)
 
             # Adiciona todas as músicas à fila
             for track in tracks.tracks:
@@ -392,19 +404,6 @@ class Music(commands.Cog):
             )
 
         await ctx.send(embed=discord.Embed(color=color, description=msg))
-
-    @commands.command()
-    async def shuffle(self, ctx):
-        vc: wavelink.Player = ctx.voice_client
-        if not vc or vc.queue.is_empty:
-            return await ctx.send(
-                embed=discord.Embed(color=red, description="❌ **The queue is empty.**")
-            )
-
-        vc.queue.shuffle()
-        await ctx.send(
-            embed=discord.Embed(color=green, description="🔀 **Queue shuffled.**")
-        )
 
 async def setup(bot):
     play_music = Music(bot)
