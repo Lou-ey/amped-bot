@@ -49,7 +49,7 @@ async def help(ctx): # This is a global command
     embed = discord.Embed(title='Help', color=green)
     embed.description = 'This is a help command'
     embed.add_field(name='!help', value='This command', inline=False)
-    embed.add_field(name='!play', value='Play a song', inline=False)
+    embed.add_field(name='!play', value='Play a song. In case of a playlist you can use -s to shuffle like this: "!play <url> -s" or "!play -s <url>"', inline=False)
     embed.add_field(name='!pause', value='Pause the song', inline=False)
     embed.add_field(name='!resume', value='Resume the song', inline=False)
     embed.add_field(name='!stop', value='Stop the song', inline=False)

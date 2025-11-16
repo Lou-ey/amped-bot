@@ -171,6 +171,7 @@ class Music(commands.Cog):
         if isinstance(tracks, wavelink.Playlist):
 
             playlist_tracks = tracks.tracks
+            total_playlist_duration = sum(track.length for track in playlist_tracks)
 
             if shuffle:
                 random.shuffle(playlist_tracks)
@@ -184,6 +185,8 @@ class Music(commands.Cog):
                 color=green,
                 description=f"📥 **Playlist `{tracks.name}` added to queue with {len(tracks.tracks)} songs.**"
             )
+            playlist_added_embed.add_field(name="Total duration", value=f"`{format_time(total_playlist_duration)}`")
+
             playlist_added_embed.set_footer(text=f"Requested by {ctx.author.display_name}", icon_url=ctx.author.display_avatar.url)
             await search_msg.edit(content='', embed=playlist_added_embed)
 
@@ -352,11 +355,14 @@ class Music(commands.Cog):
 
         description = ""
 
+        total_queue_time = sum(track.length for track in vc.queue) + sum(track.length for track in vc.auto_queue)
+        description += f"**Total Queue Time:** `{format_time(total_queue_time)}`\n\n"
+
         # Queue normal
         if not vc.queue.is_empty:
             queue_list = list(vc.queue.copy())
             description += "**🎶 Normal Queue:**\n"
-            description += '\n'.join(f"**{i + 1}.** {track.title}" for i, track in enumerate(queue_list[:50]))
+            description += '\n'.join(f"**{i + 1}.** {track.title} by {track.author}" for i, track in enumerate(queue_list[:50]))
             description += "\n\n"
 
         # Auto Queue
