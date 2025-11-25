@@ -19,6 +19,9 @@ blue = 0x0080FF
 def format_time(ms):
     return str(timedelta(milliseconds=ms))[2:7]
 
+def format_time_hhmmss(ms):
+    return str(timedelta(milliseconds=ms))
+
 def generate_progress_bar(current, total, length=20):
     if total <= 0:
         proportion = 0
@@ -185,7 +188,7 @@ class Music(commands.Cog):
                 color=green,
                 description=f"📥 **Playlist `{tracks.name}` added to queue with {len(tracks.tracks)} songs.**"
             )
-            playlist_added_embed.add_field(name="Total duration", value=f"`{format_time(total_playlist_duration)}`")
+            playlist_added_embed.add_field(name="Total duration", value=f"`{format_time_hhmmss(total_playlist_duration)}`")
 
             playlist_added_embed.set_footer(text=f"Requested by {ctx.author.display_name}", icon_url=ctx.author.display_avatar.url)
             await search_msg.edit(content='', embed=playlist_added_embed)
@@ -355,8 +358,9 @@ class Music(commands.Cog):
 
         description = ""
 
-        total_queue_time = sum(track.length for track in vc.queue) + sum(track.length for track in vc.auto_queue)
-        description += f"**Total Queue Time:** `{format_time(total_queue_time)}`\n\n"
+        total_queue_time = sum(track.length for track in vc.queue) + sum(track.length for track in vc.auto_queue) # time in ms
+        formatted_total_time = format_time_hhmmss(total_queue_time)
+        description += f"**Total Queue Duration:** `{formatted_total_time}`\n\n"
 
         # Queue normal
         if not vc.queue.is_empty:
