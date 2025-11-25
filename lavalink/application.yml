@@ -73,7 +73,7 @@ lavalink:
       snapshot: false # Set to true if you want to use a snapshot version.
     - dependency: "com.github.topi314.lavasrc:lavasrc-plugin:4.8.1"
       snapshot: false # set to true if you want to use snapshot builds (see below)
-    - dependency: "com.github.topi314.lavalyrics:lavalyrics-plugin:1.0.0"
+    - dependency: "com.github.topi314.lavalyrics:lavalyrics-plugin:1.1.0"
       snapshot: false # set to true if you want to use snapshot builds (see below)
   server:
     password: "luisito"
