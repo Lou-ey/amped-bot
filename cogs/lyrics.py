@@ -5,6 +5,8 @@ import aiohttp
 import urllib.parse
 
 class Lyrics(commands.Cog):
+    vc: wavelink.Player = None
+
     def __init__(self, bot):
         self.bot = bot
 
@@ -21,7 +23,7 @@ class Lyrics(commands.Cog):
             'Content-Type': 'application/json'
         }
 
-        async with node.session_id.get(url, headers=headers) as resp:
+        async with node.session.get(url, headers=headers) as resp:
             if resp.status != 200:
                 return None
 

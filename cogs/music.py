@@ -20,7 +20,15 @@ def format_time(ms):
     return str(timedelta(milliseconds=ms))[2:7]
 
 def format_time_hhmmss(ms):
-    return str(timedelta(milliseconds=ms))
+    seconds = ms // 1000
+    hours = seconds // 3600
+    minutes = (seconds % 3600) // 60
+    seconds = seconds % 60
+    days = seconds // 86400
+
+    if days > 0:
+        return f"{days}d {hours:02}:{minutes:02}:{seconds:02}"
+    return f"{hours:02}:{minutes:02}:{seconds:02}"
 
 def generate_progress_bar(current, total, length=20):
     if total <= 0:
