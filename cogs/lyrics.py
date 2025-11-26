@@ -23,7 +23,7 @@ class Lyrics(commands.Cog):
             'Content-Type': 'application/json'
         }
 
-        async with node.session.get(url, headers=headers) as resp:
+        async with node._session.get(url, headers=headers) as resp:
             if resp.status != 200:
                 return None
 
