@@ -3,6 +3,9 @@ from discord.ext import commands
 import wavelink
 import aiohttp
 import urllib.parse
+import logging
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class Lyrics(commands.Cog):
     vc: wavelink.Player = None
@@ -13,10 +16,11 @@ class Lyrics(commands.Cog):
     async def fetch_lyrics(self, node: wavelink.Node, title: str, author: str = ""):
         """ Fetch lyrics from the LavaLyrics plugin """
         base = node.uri.rstrip('/')
-        print(base)
+        logging.info(f"Fetching lyrics for {base}")
         params = urllib.parse.urlencode({'title': title, 'author': author})
-        print(params)
+        logging.info(f"Fetching lyrics for {base} ({params})")
         url = f'{base}/v4/lyrics?{params}'
+        logging.info(f"Fetching lyrics for {base} ({params})")
 
         headers = {
             'Authorization': node.password,
