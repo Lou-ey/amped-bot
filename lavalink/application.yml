@@ -2,7 +2,6 @@ plugins:
   lavalyrics:
     sources: # The order in which the lyrics sources will be queried
       - spotify
-      - youtube
       - deezer
       - yandexMusic
   lavasrc:

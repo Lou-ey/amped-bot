@@ -48,10 +48,8 @@ class Lyrics(commands.Cog):
 
         async with aiohttp.ClientSession() as session:
             async with session.get(url, headers=headers, params=params) as resp:
-                if resp.status == 204:
+                if resp.status in (204, 404, 500):
                     return None
-                if resp.status != 200:
-                    raise RuntimeError(f"LavaLyrics error: {resp.status}")
 
                 return await resp.json()
 
@@ -83,7 +81,7 @@ class Lyrics(commands.Cog):
             lyrics = await self.fetch_lyrics_encoded(node, track.encoded)
 
         if not lyrics or not lyrics.get('lines'):
-            await ctx.send(f"❌ Lyrics not found for **{track.title}** by) **{track.author}**.")
+            await ctx.send(f"❌ Lyrics not found for **{track.title}** by **{track.author}**.")
             return
 
         text = "\n".join(line["line"] for line in lyrics['lines'][:25])
