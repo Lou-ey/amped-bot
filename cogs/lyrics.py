@@ -13,81 +13,94 @@ class Lyrics(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    async def fetch_lyrics(self, node: wavelink.Node, title: str, author: str = ""):
+    async def fetch_lyrics_current(self, node: wavelink.Node, session_id: str, guild_id: int):
         """ Fetch lyrics from the LavaLyrics plugin """
-        base = node.uri.rstrip('/')
-        logging.info(f"Fetching lyrics for {base}")
-        params = urllib.parse.urlencode({'title': title, 'author': author})
-        logging.info(f"Fetching lyrics for {base} ({params})")
-        url = f'{base}/v4/lyrics?{params}'
-        logging.info(f"Fetching lyrics for {base} ({params})")
+        url = (
+            f"{node.uri}/v4/sessions/{session_id}"
+            f"/players/{guild_id}/track/lyrics"
+        )
 
         headers = {
             'Authorization': node.password,
-            'Content-Type': 'application/json'
         }
 
-        async with node._session.get(url, headers=headers) as resp:
-            if resp.status != 200:
-                return None
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, headers=headers) as resp:
+                if resp.status == 204:
+                    return None
+                if resp.status != 200:
+                    raise RuntimeError(f"LavaLyrics error: {resp.status}")
 
-            data = await resp.json()
-            return data.get('lyrics')
+                return await resp.json()
+
+    async def fetch_lyrics_encoded(self, node: wavelink.Node, encoded_track: str):
+        """ Fetch lyrics from the LavaLyrics plugin using encoded track """
+        url = f"{node.uri}/v4/lyrics"
+
+        headers = {
+            'Authorization': node.password,
+        }
+
+        params = {
+            'track': encoded_track,
+            'skipTrackSource': 'true'
+        }
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, headers=headers, params=params) as resp:
+                if resp.status == 204:
+                    return None
+                if resp.status != 200:
+                    raise RuntimeError(f"LavaLyrics error: {resp.status}")
+
+                return await resp.json()
 
     @commands.command(name="lyrics")
     async def lyrics(self, ctx, *, song_name: str = None):
         """Mostra as letras da música atual ou de uma pesquisa."""
         vc: wavelink.Player = ctx.voice_client
 
+        if not vc or not vc.current:
+            await ctx.send("❌ I'm not connected to a voice channel or no song is currently playing.")
+            return
+
+        node = vc.node
+
         if song_name is None:
-            if not vc or not vc.current:
-                return await ctx.send("❌ There is no song currently playing and no song name was provided.")
-
+            lyrics = await self.fetch_lyrics_current(
+                node,
+                vc.node.session_id,
+                vc.guild.id
+            )
             track = vc.current
-            title = track.title
-            author = track.author
-            node = vc.node
-
-            lyrics = await self.fetch_lyrics(node, title, author)
-
-            if not lyrics:
-                return await ctx.send(f"❌ Lyrics not found for **{title}** by **{author}**.")
-
-            embed = discord.Embed(
-                title=f"Lyrics for {title} by {author}",
-                description=lyrics[:4000],
-                color=discord.Color.blue()
-            )
-            embed.set_footer(
-                text=author,
-                icon_url=f"Requested by {ctx.author.display_avatar.url}"
-            )
-            return await ctx.send(embed=embed)
         else:
             results = await wavelink.Playable.search(song_name)
-
             if not results:
-                return await ctx.send(f"❌ No results found for **{song_name}**.")
+                await ctx.send(f"❌ No results found for **{song_name}**.")
+                return
 
             track = results[0]
-            node = vc.node if vc else list(self.bot.wavelink.nodes.values())[0]
+            lyrics = await self.fetch_lyrics_encoded(node, track.encoded)
 
-            lyrics = await self.fetch_lyrics(node, track.title, track.author)
+        if not lyrics or not lyrics.get('lines'):
+            await ctx.send(f"❌ Lyrics not found for **{track.title}** by) **{track.author}**.")
+            return
 
-            if not lyrics:
-                return await ctx.send(f"❌ Lyrics not found for **{track.title}** by **{track.author}**.")
+        text = "\n".join(line["line"] for line in lyrics['lines'][:25])
 
-            embed = discord.Embed(
-                title=f"Lyrics for {track.title} by {track.author}",
-                description=lyrics[:4000],
-                color=discord.Color.blue()
-            )
-            embed.set_footer(
-                text=track.author,
-                icon_url=f"Requested by {ctx.author.display_avatar.url}"
-            )
+        embed = discord.Embed(
+            title=f"Lyrics for {track.title} by {track.author}",
+            description=f"```{text}```",
+            color=discord.Color.blue()
+        )
 
-            return await ctx.send(embed=embed)
+        author = ctx.author
+
+        embed.set_footer(
+            text=author.name,
+            icon_url=f"Requested by {ctx.author.display_avatar.url}"
+        )
+
 
 async def setup(bot):
     await bot.add_cog(Lyrics(bot))
