@@ -45,6 +45,7 @@ plugins:
     enabled: true
     oauth:
       enabled: true # Whether this source can be used.
+      refreshToken: "1//04SSRGAlTk_jiCgYIARAAGAQSNwF-L9Ir0MJYZ-23yHYx0S1-YMmF7PhsdnOeV6zRGyTx9hyPw4bNu7xL3CSPDoTr_xxCBAxSldI"
     proxy:
       enabled: false # Whether to use a proxy for YouTube requests.
     allowSearch: true # Whether "ytsearch:" and "ytmsearch:" can be used.
@@ -59,9 +60,6 @@ plugins:
       - MUSIC
       - WEB
       - MWEB
-      - ANDROID
-      - ANDROID_VR
-      - ANDROID_MUSIC
       - WEBEMBEDDED
       - IOS
 
