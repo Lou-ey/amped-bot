@@ -2,6 +2,7 @@ plugins:
   lavalyrics:
     sources: # The order in which the lyrics sources will be queried
       - spotify
+      - youtube
       - deezer
       - yandexMusic
   lavasrc:
@@ -43,6 +44,7 @@ plugins:
     oauth:
       enabled: true # Whether this source can be used.
       refreshToken: "1//04VaLvw5CbCDtCgYIARAAGAQSNwF-L9Ir6g3e7r3KdDW8UY2CCdBCwxl6hgmreAIgPOOeASG9ncsnwHv1RIUoNWtW7koVbyIxSow"
+      skipInitialization: true
     allowSearch: true # Whether "ytsearch:" and "ytmsearch:" can be used.
     allowDirectVideoIds: true # Whether just video IDs can match. If false, only complete URLs will be loaded.
     allowDirectPlaylistIds: true # Whether just playlist IDs can match. If false, only complete URLs will be loaded.
