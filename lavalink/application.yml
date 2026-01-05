@@ -5,6 +5,12 @@ plugins:
       - youtube
       - deezer
       - yandexmusic
+    providers:
+      - name: "genius" # The lyrics provider to use. Currently only "genius" is supported.
+        token: "8UCt0DNFDJ5hdggDBCJWXshoceYZt1hGYA21QBoR2_6y9MdZ2IJ2G-mFBJvvXaPnPE4-XxbZzjphcvxbKYm-sg"
+
+      - name: "lyricsovh" # The lyrics provider to use. Currently only "lyricsovh" is supported.
+        # No token required for lyricsovh
   lavasrc:
     providers: # Custom providers for track loading. This is the default
       - "ytsearch:\"%ISRC%\"" # Will be ignored if track does not have an ISRC. See https://en.wikipedia.org/wiki/International_Standard_Recording_Code
@@ -20,9 +26,9 @@ plugins:
       tidal: false # Enable Tidal source
       qobuz: false # Enabled qobuz source
     lyrics-sources:
-      spotify: false # Enable Spotify lyrics source
+      spotify: true # Enable Spotify lyrics source
       deezer: false # Enable Deezer lyrics source
-      youtube: false # Enable YouTube lyrics source
+      youtube: true # Enable YouTube lyrics source
       yandexmusic: false # Enable Yandex Music lyrics source
       vkmusic: false # Enable Vk Music lyrics source
     spotify:
