@@ -33,7 +33,7 @@ plugins:
       resolveArtistsInSearch: true
       localFiles: false
       preferAnonymousToken: false # Whether to use the anonymous token for resolving tracks, artists and albums. Spotify generated playlists are always resolved with the anonymous tokens since they do not work otherwise. This requires the customTokenEndpoint to be set.
-      # customTokenEndpoint: "http://localhost:8080/api/token" # Optional custom endpoint for getting the anonymous token. If not set, spotify's default endpoint will be used which might not work. The response must match spotify's anonymous token response format.
+      customTokenEndpoint: "http://localhost:8080/api/token" # Optional custom endpoint for getting the anonymous token. If not set, spotify's default endpoint will be used which might not work. The response must match spotify's anonymous token response format.
     youtube:
       countryCode: "US"
       language: "en"
@@ -41,7 +41,7 @@ plugins:
     enabled: true
     oauth:
       enabled: true # Whether this source can be used.
-      refreshToken: "1//04M42C9b08wBxCgYIARAAGAQSNwF-L9IrIK5dRI9SYmzngeBPjPs_5iGW_gFy5oysfg6K92IsBe1enGTMp4hGPo72OHONAIOfi84"
+      # refreshToken: "1//04M42C9b08wBxCgYIARAAGAQSNwF-L9IrIK5dRI9SYmzngeBPjPs_5iGW_gFy5oysfg6K92IsBe1enGTMp4hGPo72OHONAIOfi84"
     allowSearch: true # Whether "ytsearch:" and "ytmsearch:" can be used.
     allowDirectVideoIds: true # Whether just video IDs can match. If false, only complete URLs will be loaded.
     allowDirectPlaylistIds: true # Whether just playlist IDs can match. If false, only complete URLs will be loaded.
