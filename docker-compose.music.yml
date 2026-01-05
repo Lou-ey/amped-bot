@@ -11,6 +11,10 @@ services:
       - "2333"
     ports:
       - "2333:2333"
+    environment:
+      - HTTP_PROXY=
+      - HTTPS_PROXY=
+      - NO_PROXY=*
 networks:
   lavalink:
     driver: bridge
