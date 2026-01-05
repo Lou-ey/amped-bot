@@ -5,7 +5,7 @@ import aiohttp
 import urllib.parse
 import logging
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format='[%(asctime)s] [%(levelname)s    ] %(message)s')
 
 class Lyrics(commands.Cog):
     vc: wavelink.Player = None
@@ -25,11 +25,11 @@ class Lyrics(commands.Cog):
         }
 
         async with aiohttp.ClientSession() as session:
-            async with session.get(url, headers=headers, params=params) as resp:
-                if resp.status == 204:
+            async with session.get(url, headers=headers) as resp:
+                if resp.status in (204, 404, 500):
                     return None
                 if resp.status != 200:
-                    raise RuntimeError(f"LavaLyrics error: {resp.status}")
+                    return None
 
                 return await resp.json()
 
@@ -42,12 +42,15 @@ class Lyrics(commands.Cog):
         }
 
         params = {
-            'track': encoded_track
+            'track': encoded_track,
+            'skipTrackSource': 'true'
         }
 
         async with aiohttp.ClientSession() as session:
             async with session.get(url, headers=headers, params=params) as resp:
                 if resp.status in (204, 404, 500):
+                    return None
+                if resp.status != 200:
                     return None
 
                 return await resp.json()
@@ -83,7 +86,11 @@ class Lyrics(commands.Cog):
             await ctx.send(f"❌ Lyrics not found for **{track.title}** by **{track.author}**.")
             return
 
-        text = "\n".join(line["line"] for line in lyrics['lines'][:25])
+        text = "\n".join(
+            line["line"]
+            for line in lyrics['lines'][:25]
+            if line.get("line")
+        )
 
         embed = discord.Embed(
             title=f"Lyrics for {track.title} by {track.author}",
