@@ -2,9 +2,6 @@ plugins:
   lavalyrics:
     sources: # The order in which the lyrics sources will be queried
       - spotify
-      - youtube
-      - deezer
-      - yandexMusic
   lavasrc:
     providers: # Custom providers for track loading. This is the default
       - "ytsearch:\"%ISRC%\"" # Will be ignored if track does not have an ISRC. See https://en.wikipedia.org/wiki/International_Standard_Recording_Code
@@ -43,7 +40,7 @@ plugins:
     enabled: true
     oauth:
       enabled: true # Whether this source can be used.
-      refreshToken: "1//04CQnkmiacPK1CgYIARAAGAQSNwF-L9IruzBohb83AM2e4p3LhBTjgtY6Slmd542pJ3ailkhRDdZVJkM5eTyef9lZFHml2zhh9LA"
+      skipInitialization: true
     allowSearch: true # Whether "ytsearch:" and "ytmsearch:" can be used.
     allowDirectVideoIds: true # Whether just video IDs can match. If false, only complete URLs will be loaded.
     allowDirectPlaylistIds: true # Whether just playlist IDs can match. If false, only complete URLs will be loaded.
