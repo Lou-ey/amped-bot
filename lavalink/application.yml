@@ -29,8 +29,6 @@ plugins:
       clientId: "7d040277edda4b2b8ad1541e5625c4e4"
       clientSecret: "65a00bba04ed49bca8b3182d9f687068"
       spDc: "AQCNXTSh1myC7B0P6EbqQOyScS23cg_WZD1CllPly2hePhXZDNjUJe8Lo8kKK9k4_1cGaPgjJBdKuwunSTJuQy7oQi6-yF-1PK2Rd0SnX_1E02kyj06_4XUnMjLTYX30YwSkhXOuZXuOqAUxqP568nUgv-pymLYjX8wyES8ZK9bAsxEQIjj2SO3Gy10qBIBmFWCLpr53mX-gR4ppHIs"
-      proxy:
-        enabled: false
       countryCode: "PT"
       playlistLoadLimit: 6
       albumLoadLimit: 6
@@ -45,10 +43,8 @@ plugins:
     enabled: true
     oauth:
       enabled: true # Whether this source can be used.
-      # refreshToken: "1//04SSRGAlTk_jiCgYIARAAGAQSNwF-L9Ir0MJYZ-23yHYx0S1-YMmF7PhsdnOeV6zRGyTx9hyPw4bNu7xL3CSPDoTr_xxCBAxSldI"
+      refreshToken: "1//04SSRGAlTk_jiCgYIARAAGAQSNwF-L9Ir0MJYZ-23yHYx0S1-YMmF7PhsdnOeV6zRGyTx9hyPw4bNu7xL3CSPDoTr_xxCBAxSldI"
       skipInitialization: true
-    proxy:
-      enabled: false # Whether to use a proxy for YouTube requests.
     allowSearch: true # Whether "ytsearch:" and "ytmsearch:" can be used.
     allowDirectVideoIds: true # Whether just video IDs can match. If false, only complete URLs will be loaded.
     allowDirectPlaylistIds: true # Whether just playlist IDs can match. If false, only complete URLs will be loaded.
@@ -68,7 +64,7 @@ server: # REST and WS server
   port: 2333
   address: 0.0.0.0
   http2:
-    enabled: true # Whether to enable HTTP/2 support
+    enabled: false # Whether to enable HTTP/2 support
 lavalink:
   plugins:
     # Replace VERSION with the current version as shown by the Releases tab or a long commit hash for snapshots.
