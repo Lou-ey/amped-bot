@@ -1,10 +1,7 @@
 plugins:
   lavalyrics:
     sources: # The order in which the lyrics sources will be queried
-      - spotify
       - youtube
-      - deezer
-      - yandexmusic
   lavasrc:
     providers: # Custom providers for track loading. This is the default
       - "ytsearch:\"%ISRC%\"" # Will be ignored if track does not have an ISRC. See https://en.wikipedia.org/wiki/International_Standard_Recording_Code
@@ -20,7 +17,7 @@ plugins:
       tidal: false # Enable Tidal source
       qobuz: false # Enabled qobuz source
     lyrics-sources:
-      spotify: true # Enable Spotify lyrics source
+      spotify: false # Enable Spotify lyrics source
       deezer: false # Enable Deezer lyrics source
       youtube: true # Enable YouTube lyrics source
       yandexmusic: false # Enable Yandex Music lyrics source
@@ -45,7 +42,7 @@ plugins:
     enabled: true
     oauth:
       enabled: true # Whether this source can be used.
-      refreshToken: "1//04SSRGAlTk_jiCgYIARAAGAQSNwF-L9Ir0MJYZ-23yHYx0S1-YMmF7PhsdnOeV6zRGyTx9hyPw4bNu7xL3CSPDoTr_xxCBAxSldI"
+      # refreshToken: "1//04M42C9b08wBxCgYIARAAGAQSNwF-L9IrIK5dRI9SYmzngeBPjPs_5iGW_gFy5oysfg6K92IsBe1enGTMp4hGPo72OHONAIOfi84"
       proxy:
         enabled: false
     allowSearch: true # Whether "ytsearch:" and "ytmsearch:" can be used.
