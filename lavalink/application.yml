@@ -1,4 +1,10 @@
 plugins:
+  # lavalyrics:
+  #  sources: # The order in which the lyrics sources will be queried
+  #    - spotify
+  #    - youtube
+  #    - deezer
+  #    - yandexmusic
   lavasrc:
     providers: # Custom providers for track loading. This is the default
       - "ytsearch:\"%ISRC%\"" # Will be ignored if track does not have an ISRC. See https://en.wikipedia.org/wiki/International_Standard_Recording_Code
@@ -69,8 +75,8 @@ lavalink:
       snapshot: false # Set to true if you want to use a snapshot version.
     - dependency: "com.github.topi314.lavasrc:lavasrc-plugin:4.8.1"
       snapshot: false # set to true if you want to use snapshot builds (see below)
-    - dependency: "com.github.topi314.lavalyrics:lavalyrics-plugin:1.0.0"
-      snapshot: false # set to true if you want to use snapshot builds (see below)
+    #- dependency: "com.github.topi314.lavalyrics:lavalyrics-plugin:1.0.0"
+    #  snapshot: false # set to true if you want to use snapshot builds (see below)
   server:
     password: "luisito"
     sources:
