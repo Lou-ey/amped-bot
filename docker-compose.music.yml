@@ -13,4 +13,4 @@ services:
       - "2333:2333"
 networks:
   lavalink:
-    driver: host
+    driver: bridge
