@@ -11,6 +11,7 @@ services:
       - "2333"
     ports:
       - "2333:2333"
+    network_mode: "host" # Optional: Use host networking for better performance on Linux
 networks:
   lavalink:
     driver: bridge
