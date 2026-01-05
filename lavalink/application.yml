@@ -1,10 +1,4 @@
 plugins:
-  lavalyrics:
-    sources: # The order in which the lyrics sources will be queried
-      - spotify
-      - youtube
-      - deezer
-      - yandexmusic
   lavasrc:
     providers: # Custom providers for track loading. This is the default
       - "ytsearch:\"%ISRC%\"" # Will be ignored if track does not have an ISRC. See https://en.wikipedia.org/wiki/International_Standard_Recording_Code
