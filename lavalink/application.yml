@@ -43,7 +43,7 @@ plugins:
     enabled: true
     oauth:
       enabled: true # Whether this source can be used.
-      refreshToken: "1//04SSRGAlTk_jiCgYIARAAGAQSNwF-L9Ir0MJYZ-23yHYx0S1-YMmF7PhsdnOeV6zRGyTx9hyPw4bNu7xL3CSPDoTr_xxCBAxSldI"
+      # refreshToken: "1//04SSRGAlTk_jiCgYIARAAGAQSNwF-L9Ir0MJYZ-23yHYx0S1-YMmF7PhsdnOeV6zRGyTx9hyPw4bNu7xL3CSPDoTr_xxCBAxSldI"
     allowSearch: true # Whether "ytsearch:" and "ytmsearch:" can be used.
     allowDirectVideoIds: true # Whether just video IDs can match. If false, only complete URLs will be loaded.
     allowDirectPlaylistIds: true # Whether just playlist IDs can match. If false, only complete URLs will be loaded.
