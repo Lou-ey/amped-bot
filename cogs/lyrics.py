@@ -24,8 +24,12 @@ class Lyrics(commands.Cog):
             'Authorization': node.password,
         }
 
+        params = {
+            'skipTrackSource': 'true'
+        }
+
         async with aiohttp.ClientSession() as session:
-            async with session.get(url, headers=headers) as resp:
+            async with session.get(url, headers=headers, params=params) as resp:
                 if resp.status == 204:
                     return None
                 if resp.status != 200:

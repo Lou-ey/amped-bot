@@ -2,6 +2,9 @@ plugins:
   lavalyrics:
     sources: # The order in which the lyrics sources will be queried
       - spotify
+      - youtube
+      - deezer
+      - yandexmusic
   lavasrc:
     providers: # Custom providers for track loading. This is the default
       - "ytsearch:\"%ISRC%\"" # Will be ignored if track does not have an ISRC. See https://en.wikipedia.org/wiki/International_Standard_Recording_Code
@@ -17,15 +20,17 @@ plugins:
       tidal: false # Enable Tidal source
       qobuz: false # Enabled qobuz source
     lyrics-sources:
-      spotify: true # Enable Spotify lyrics source
+      spotify: false # Enable Spotify lyrics source
       deezer: false # Enable Deezer lyrics source
-      youtube: true # Enable YouTube lyrics source
+      youtube: false # Enable YouTube lyrics source
       yandexmusic: false # Enable Yandex Music lyrics source
       vkmusic: false # Enable Vk Music lyrics source
     spotify:
       clientId: "7d040277edda4b2b8ad1541e5625c4e4"
       clientSecret: "65a00bba04ed49bca8b3182d9f687068"
       spDc: "AQCNXTSh1myC7B0P6EbqQOyScS23cg_WZD1CllPly2hePhXZDNjUJe8Lo8kKK9k4_1cGaPgjJBdKuwunSTJuQy7oQi6-yF-1PK2Rd0SnX_1E02kyj06_4XUnMjLTYX30YwSkhXOuZXuOqAUxqP568nUgv-pymLYjX8wyES8ZK9bAsxEQIjj2SO3Gy10qBIBmFWCLpr53mX-gR4ppHIs"
+      proxy:
+        enabled: false
       countryCode: "PT"
       playlistLoadLimit: 6
       albumLoadLimit: 6
@@ -40,7 +45,8 @@ plugins:
     enabled: true
     oauth:
       enabled: true # Whether this source can be used.
-      skipInitialization: true
+    proxy:
+      enabled: false # Whether to use a proxy for YouTube requests.
     allowSearch: true # Whether "ytsearch:" and "ytmsearch:" can be used.
     allowDirectVideoIds: true # Whether just video IDs can match. If false, only complete URLs will be loaded.
     allowDirectPlaylistIds: true # Whether just playlist IDs can match. If false, only complete URLs will be loaded.
