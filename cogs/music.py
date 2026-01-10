@@ -139,7 +139,10 @@ class Music(commands.Cog):
 
     @commands.command()
     async def play(self, ctx, *, query: str):
-        await ctx.message.edit(suppress=True)
+        try:
+            await ctx.message.edit(suppress=True)
+        except  discord.Forbidden:
+            pass
 
         shuffle = False
         if "-s" in query.lower():
