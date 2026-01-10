@@ -302,8 +302,6 @@ class Music(commands.Cog):
         track = payload.track
 
         requester = getattr(vc, "current_requester", None) or getattr(track, "requester", None)
-        #if requester is None:
-        #    requester = getattr(track, "requester", None)
 
         embed = self._now_playing_embed(track, vc, requester)
         msg = await vc.text_channel.send(embed=embed)
