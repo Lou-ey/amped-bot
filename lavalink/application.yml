@@ -48,7 +48,7 @@ plugins:
     enabled: true
     oauth:
       enabled: true # Whether this source can be used.
-      # refreshToken: "1//04x3Gw3g_uLBLCgYIARAAGAQSNwF-L9IrRaOIelex6uJbYDJn6FVRhu3h5-Kg41XBaxVTcGbNN778Y4o2eI75db_lzvp9HtbAO08"
+      refreshToken: "1//03odt8gRg_wNUCgYIARAAGAMSNwF-L9Ir-Z8Fgox9TNkFiFlrO8-8D6ANraDpa1IsYDBP_3PqQ2iGHKMIw8m0XWh0xsM2rKsZOHs"
       # skipInitialization: true # Whether to skip the OAuth initialization on startup. If true, you must call YoutubeOAuth2Handler#initialize manually before using this source.
     allowSearch: true # Whether "ytsearch:" and "ytmsearch:" can be used.
     allowDirectVideoIds: true # Whether just video IDs can match. If false, only complete URLs will be loaded.
