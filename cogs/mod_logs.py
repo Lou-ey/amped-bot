@@ -16,7 +16,7 @@ class VoiceLogger(commands.Cog):
 
         if before.channel is None and after.channel is not None:
             # the user joined a voice channel
-            self.voice_times[member.id] = datetime.datetime.utcnow()
+            self.voice_times[member.id] = datetime.datetime.now(datetime.timezone.utc)
             embed = discord.Embed(
                 description=f"🔊 **{member.display_name}** joined `{after.channel.name}`",
                 color=discord.Color.green()
@@ -39,7 +39,7 @@ class VoiceLogger(commands.Cog):
 
             if join_time:
                 join_time = join_time.replace(tzinfo=None)
-                duration = datetime.datetime.utcnow() - join_time
+                duration = datetime.datetime.now(datetime.timezone.utc) - join_time
                 duration_str = str(duration).split('.')[0]
                 embed.add_field(name=f"Was on the {before.channel.name} for", value=duration_str, inline=False)
             await log_channel.send(embed=embed)
