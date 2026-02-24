@@ -1,7 +1,10 @@
+import logging
 import os
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
+import sys
+from utils.utils import Utils
 
 load_dotenv()
 TOKEN = os.getenv("TOKEN")
@@ -15,30 +18,37 @@ client = commands.Bot(command_prefix='!', intents=intents)
 green = 0x00FF00
 red = 0xFF0000
 
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+disabled_cogs = [cog.strip() for cog in os.getenv('DISABLED_COGS', '').split(',') if cog.strip()]
+
+utils = Utils(client)
+
 @client.event
 async def on_ready():
     activity = discord.Activity(type=discord.ActivityType.listening, name='!help')
     await client.change_presence(activity=activity)
-    print(f'{client.user} has connected to the following servers:\n')
+    logging.info(f'{client.user} has connected to the following servers:\n')
     for server in client.guilds:
-        print(f'- {server.name} (id: {server.id})')
+        logging.info(f'- {server.name} (id: {server.id})')
 
         client.tree.copy_global_to(guild=server) # Copy global commands to the server
         await client.tree.sync(guild=server) # Sync the commands to the server
-    print(f'\nCogs loaded:')
+    logging.info(f'\nCogs loaded:')
     # verify that the cogs already loaded
     for filename in os.listdir('./cogs'):
-        if filename.endswith('.py'):
+        if filename.endswith('.py') and filename[:-3] not in disabled_cogs:
             cog_name = f'cogs.{filename[:-3]}'
             try:
                 if cog_name in client.extensions:
-                    print(f'Cog {filename[:-3]} already loaded, ignoring...')
+                    logging.info(f'Cog {filename[:-3]} already loaded, ignoring...')
                 else:
                     await client.load_extension(cog_name)
-                    print(f'Loaded cog: {filename[:-3]}')
+                    logging.info(f'Loaded cog: {filename[:-3]}')
             except Exception as e:
-                print(f"Failed to load '{cog_name}': {e}")
+                logging.info(f"Failed to load '{cog_name}': {e}")
 
+    #await utils.terminal_commanding(logging=logging)
 
 @client.event
 async def on_message(message):

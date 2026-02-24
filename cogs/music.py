@@ -8,14 +8,20 @@ from datetime import timedelta
 from dotenv import load_dotenv
 import os
 import random
+from utils.utils import Utils
+from discord.errors import DiscordServerError, Forbidden, HTTPException
+import logging
 
 load_dotenv()
 PASSWORD = os.getenv("PASSWORD")
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 green = 0x00FF00
 red = 0xFF0000
 blue = 0x0080FF
 
+'''
 def format_time(ms):
     return str(timedelta(milliseconds=ms))[2:7]
 
@@ -48,12 +54,19 @@ def generate_progress_bar(current, total, length=20):
     empty = length - filled_length - (1 if has_partial else 0)
 
     return '⌈' + '█' * filled_length + ('▒' if has_partial else '') + '░' * empty + '⌉'
+'''
 
 class Music(commands.Cog):
     vc: wavelink.Player = None
 
     def __init__(self, bot):
         self.bot = bot
+        self.utils = Utils(bot)
+        self.bar = self.utils.generate_progress_bar
+        self.format_time = self.utils.format_time
+        self.format_time_hhmmss = self.utils.format_time_hhmmss
+        self.paginate = self.utils.paginate
+        self.progress_tasks: dict[int, asyncio.Task] = {}
 
     async def setup(self):
         nodes = [wavelink.Node(
@@ -119,29 +132,37 @@ class Music(commands.Cog):
 
     async def start_progress_updater(self, vc: wavelink.Player, track, message):
         while vc.playing and track == vc.current:
-            pos = vc.position
-            bar = generate_progress_bar(pos, track.length)
-            requester = getattr(vc, "current_requester", None)
-            embed = self._now_playing_embed(track, vc, requester)
-            embed.add_field(
-                name="Progress",
-                value=f"{bar}\n`{format_time(pos)} / {format_time(track.length)}`",
-                inline=False
-            )
-
             try:
-                await message.edit(embed=embed)
-            except discord.NotFound:
-                print('Mensagem apagada.')
-                break
+                pos = vc.position
+                bar = self.bar(pos, track.length)
+                requester = getattr(vc, "current_requester", None)
+                embed = self._now_playing_embed(track, vc, requester)
+                embed.add_field(
+                    name="Progress",
+                    value=f"{bar}\n`{self.format_time(pos)} / {self.format_time(track.length)}`",
+                    inline=False
+                )
 
-            await asyncio.sleep(1)
+                await message.edit(embed=embed)
+                await asyncio.sleep(1)
+
+            except discord.NotFound:
+                print("Message was deleted, stopping progress updater.")
+                break
+            except Forbidden:
+                print("Missing permissions to edit the message, stopping progress updater.")
+                break
+            except (discord.HTTPException, discord.DiscordServerError) as e:
+                print(f"Failed to edit message: {e}, stopping progress updater.")
+                await asyncio.sleep(1)
+
+
 
     @commands.command()
     async def play(self, ctx, *, query: str):
         try:
             await ctx.message.edit(suppress=True)
-        except  discord.Forbidden:
+        except (Forbidden, HTTPException):
             pass
 
         shuffle = False
@@ -150,6 +171,13 @@ class Music(commands.Cog):
             query = query.replace("-s", "").strip()
 
         if not ctx.voice_client:
+            if not ctx.author.voice:
+                return await ctx.send(
+                    embed=discord.Embed(
+                        color=red,
+                        description='❌ **You are not connected to a voice channel.**'
+                    )
+                )
             try:
                 await ctx.invoke(self.connect)
             except Exception as e:
@@ -191,7 +219,7 @@ class Music(commands.Cog):
                 random.shuffle(playlist_tracks)
 
             # Adiciona todas as músicas à fila
-            for track in tracks.tracks:
+            for track in playlist_tracks:
                 track.requester = ctx.author
                 await vc.queue.put_wait(track)
 
@@ -199,7 +227,7 @@ class Music(commands.Cog):
                 color=green,
                 description=f"📥 **Playlist `{tracks.name}` added to queue with {len(tracks.tracks)} songs.**"
             )
-            playlist_added_embed.add_field(name="Total duration", value=f"`{format_time_hhmmss(total_playlist_duration)}`")
+            playlist_added_embed.add_field(name="Total duration", value=f"`{self.format_time_hhmmss(total_playlist_duration)}`")
 
             playlist_added_embed.set_footer(text=f"Requested by {ctx.author.display_name}", icon_url=ctx.author.display_avatar.url)
             await search_msg.edit(content='', embed=playlist_added_embed)
@@ -211,8 +239,9 @@ class Music(commands.Cog):
 
         else:
             track: wavelink.Playable = tracks[0]
-            track.requester = ctx.author
-            vc.current_requester = ctx.author
+            if ctx.author:
+                track.requester = ctx.author
+                vc.current_requester = ctx.author
             track.position_in_queue = vc.queue.count + (1 if vc.current else 0)
 
             if not vc.playing:
@@ -297,7 +326,6 @@ class Music(commands.Cog):
 
     @commands.Cog.listener()
     async def on_wavelink_track_start(self, payload: wavelink.TrackStartEventPayload):
-
         vc: wavelink.Player = payload.player
         track = payload.track
 
@@ -305,7 +333,19 @@ class Music(commands.Cog):
 
         embed = self._now_playing_embed(track, vc, requester)
         msg = await vc.text_channel.send(embed=embed)
-        asyncio.create_task(self.start_progress_updater(vc, track, msg))
+
+        old_task = self.progress_tasks.get(vc.guild.id)
+        if old_task and not old_task.done():
+            old_task.cancel()
+        if old_task and not old_task.done():
+            old_task.cancel()
+
+        task = asyncio.create_task(self.start_progress_updater(vc, track, msg))
+
+        self.progress_tasks[vc.guild.id] = task
+
+        #logging.info("Num of active progress tasks:", len(self.progress_tasks))
+
 
     @commands.Cog.listener()
     async def on_wavelink_inactive_player(self, player: wavelink.Player):
@@ -318,20 +358,20 @@ class Music(commands.Cog):
         if self.vc and self.vc.playing:
             await self.vc.pause(True)
             embed = discord.Embed(description="⏸️ **Music paused.**", color=green)
-            await ctx.send(embed=embed)
+            #await ctx.send(embed=embed)
         else:
             embed = discord.Embed(description=":x: **Nothing is currently playing.**", color=red)
-            await ctx.send(embed=embed)
+        await ctx.send(embed=embed)
 
     @commands.command()
     async def resume(self, ctx):
         if self.vc and self.vc.paused:
             await self.vc.pause(False)
             embed = discord.Embed(description="▶️ **Music resumed.**", color=green)
-            await ctx.send(embed=embed)
+            #await ctx.send(embed=embed)
         else:
             embed = discord.Embed(description=":x: **The music is not paused.**", color=red)
-            await ctx.send(embed=embed)
+        await ctx.send(embed=embed)
 
     @commands.command()
     async def stop(self, ctx):
@@ -358,35 +398,43 @@ class Music(commands.Cog):
     @commands.command()
     async def queue(self, ctx):
         vc: wavelink.Player = ctx.voice_client
-        embed = discord.Embed(color=green)
 
         if not vc or (vc.queue.is_empty and vc.auto_queue.is_empty):
-            embed.description = '📭 **The queue is empty.**'
+            embed = discord.Embed(
+                description='📭 **The queue is empty.**',
+                color=green
+            )
             await ctx.send(embed=embed)
             return
 
-        description = ""
+        items = []
 
-        total_queue_time = sum(track.length for track in vc.queue) + sum(track.length for track in vc.auto_queue) # time in ms
-        formatted_total_time = format_time_hhmmss(total_queue_time)
-        description += f"**Total Queue Duration:** `{formatted_total_time}`\n\n"
+        total_queue_time = (
+                sum(track.length for track in vc.queue) +
+                sum(track.length for track in vc.auto_queue)
+        )
+        formatted_total_time = self.format_time_hhmmss(total_queue_time)
 
-        # Queue normal
+        items.append(f"⏱ **Total Queue Duration:** `{formatted_total_time}`")
+        items.append("")
+
         if not vc.queue.is_empty:
-            queue_list = list(vc.queue.copy())
-            description += "**🎶 Normal Queue:**\n"
-            description += '\n'.join(f"**{i + 1}.** {track.title} by {track.author}" for i, track in enumerate(queue_list[:50]))
-            description += "\n\n"
+            items.append("🎶 **Normal Queue:**")
+            for i, track in enumerate(vc.queue.copy(), start=1):
+                items.append(f"**{i}.** {track.title} — {track.author}")
+            items.append("")
 
-        # Auto Queue
         if not vc.auto_queue.is_empty:
-            auto_queue_list = list(vc.auto_queue.copy())
-            description += "**🤖 Auto Queue:**\n"
-            description += '\n'.join(f"**{i + 1}.** {track.title}" for i, track in enumerate(auto_queue_list[:50]))
+            items.append("🤖 **Auto Queue:**")
+            for i, track in enumerate(vc.auto_queue.copy(), start=1):
+                items.append(f"**{i}.** {track.title}")
 
-        embed.title = f'📜 Combined Queue'
-        embed.description = description.strip()
-        await ctx.send(embed=embed)
+        await self.paginate(
+            ctx,
+            items,
+            title="📜 Combined Queue",
+            per_page=10
+        )
 
     @commands.command()
     async def autoplay(self, ctx, mode: str = None):
@@ -404,15 +452,15 @@ class Music(commands.Cog):
             )
 
         mode = mode.lower()
-        if mode in ["on", "enabled", "enable"]:
+        if mode in {"on", "enabled", "enable"}:
             vc.autoplay = wavelink.AutoPlayMode.enabled
             msg = "🔄 **Autoplay enabled (recommended tracks will auto-play).**"
             color = green
-        elif mode in ["partial"]:
+        elif mode in {"partial"}:
             vc.autoplay = wavelink.AutoPlayMode.partial
             msg = "🟡 **Autoplay set to partial (manual handling of recommended tracks).**"
             color = blue
-        elif mode in ["off", "disabled", "disable"]:
+        elif mode in {"off", "disabled", "disable"}:
             vc.autoplay = wavelink.AutoPlayMode.disabled
             msg = "⛔ **Autoplay disabled.**"
             color = red

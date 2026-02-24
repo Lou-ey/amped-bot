@@ -38,7 +38,6 @@ class VoiceLogger(commands.Cog):
             embed.timestamp = discord.utils.utcnow()
 
             if join_time:
-                join_time = join_time.replace(tzinfo=None)
                 duration = datetime.datetime.now(datetime.timezone.utc) - join_time
                 duration_str = str(duration).split('.')[0]
                 embed.add_field(name=f"Was on the {before.channel.name} for", value=duration_str, inline=False)
