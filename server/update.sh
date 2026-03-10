@@ -2,8 +2,8 @@
 
 set -e
 
-cd /home/luis/Projects/discord_bot/amped-bot || exit
-git remote set-url origin git@github.com:Lou-ey/amped-bot.git
+cd your_dir_here || exit
+git remote set-url origin git@github.com:USERNAME/amped-bot.git
 
 echo -e "\033[1;33mGit pulling...\033[0m"
 git pull origin master
