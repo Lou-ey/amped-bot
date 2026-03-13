@@ -36,9 +36,9 @@ plugins:
       yandexmusic: false # Enable Yandex Music lyrics source
       vkmusic: false # Enable Vk Music lyrics source
     spotify:
-      clientId: "7d040277edda4b2b8ad1541e5625c4e4"
-      clientSecret: "65a00bba04ed49bca8b3182d9f687068"
-      spDc: "AQCNXTSh1myC7B0P6EbqQOyScS23cg_WZD1CllPly2hePhXZDNjUJe8Lo8kKK9k4_1cGaPgjJBdKuwunSTJuQy7oQi6-yF-1PK2Rd0SnX_1E02kyj06_4XUnMjLTYX30YwSkhXOuZXuOqAUxqP568nUgv-pymLYjX8wyES8ZK9bAsxEQIjj2SO3Gy10qBIBmFWCLpr53mX-gR4ppHIs"
+      clientId: ""
+      clientSecret: ""
+      spDc: ""
       countryCode: "US"
       playlistLoadLimit: 6
       albumLoadLimit: 6
@@ -58,7 +58,7 @@ plugins:
 
     oauth:
       enabled: true # Whether this source can be used.
-      refreshToken: "1//038p6JQCBRMS6CgYIARAAGAMSNwF-L9IrUhguf1S2VXOyYyt1P0j7ROKyCUl7gXTw-uWWQvaSRtsrfkjd9oZ8-8oAIOeulTD_jUI"
+      refreshToken: ""
       # skipInitialization: true # Whether to skip the OAuth initialization on startup. If true, you must call YoutubeOAuth2Handler#initialize manually before using this source.
 
     allowSearch: true # Whether "ytsearch:" and "ytmsearch:" can be used.
@@ -86,7 +86,7 @@ lavalink:
     - dependency: "com.github.topi314.lavalyrics:lavalyrics-plugin:1.1.0"
       snapshot: false # set to true if you want to use snapshot builds (see below)
   server:
-    password: "luisito"
+    password: ""
     sources:
       youtube: false # Make sure to maintain this value as false.
       bandcamp: true
