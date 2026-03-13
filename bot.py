@@ -21,7 +21,7 @@ red = 0xFF0000
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-#disabled_cogs = [cog.strip() for cog in os.getenv('DISABLED_COGS', '').split(',') if cog.strip()]
+disabled_cogs = [cog.strip() for cog in os.getenv('DISABLED_COGS', '').split(',') if cog.strip()]
 
 #utils = Utils(bot)
 
@@ -38,7 +38,7 @@ async def on_ready():
     logging.info(f'\nCogs loaded:')
     # verify that the cogs already loaded
     for filename in os.listdir('./cogs'):
-        if filename.endswith('.py') and filename[:-3]: #not in disabled_cogs:
+        if filename.endswith('.py') and filename[:-3] not in disabled_cogs:
             cog_name = f'cogs.{filename[:-3]}'
             try:
                 if cog_name in bot.extensions:

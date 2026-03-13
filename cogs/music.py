@@ -87,6 +87,7 @@ class Music(commands.Cog):
         self.format_time_hhmmss = self.utils.format_time_hhmmss
         self.paginate = self.utils.paginate
         self.progress_tasks = {}
+        self.inactivity_tasks = {}
 
         if not hasattr(bot, 'lavalink'):
             bot.lavalink = lavalink.Client(bot.user.id)
@@ -155,6 +156,15 @@ class Music(commands.Cog):
                 logging.error(f"Error updating progress: {e}")
                 await asyncio.sleep(1)
 
+    def _start_watcher(self, guild_id):
+        if guild_id not in self.inactivity_tasks or self.inactivity_tasks[guild_id].done():
+            self.inactivity_tasks[guild_id] = asyncio.create_task(self.inactivity_watcher(guild_id, timeout=300))
+
+    def _stop_watcher(self, guild_id):
+        if guild_id in self.inactivity_tasks:
+            self.inactivity_tasks[guild_id].cancel()
+            del self.inactivity_tasks[guild_id]
+
     # EVENTS
     @lavalink.listener(TrackStartEvent)
     async def on_track_start(self, event: TrackStartEvent):
@@ -162,11 +172,7 @@ class Music(commands.Cog):
         track = event.track
         guild_id = player.guild_id
 
-        if guild_id in self.progress_tasks:
-            task = self.progress_tasks[guild_id]
-            if not task.done():
-                task.cancel()
-                del self.progress_tasks[guild_id]
+        self._stop_watcher(guild_id)
 
         channel_id = player.fetch('text_channel')
         if not channel_id:
@@ -175,7 +181,6 @@ class Music(commands.Cog):
         channel = self.bot.get_channel(channel_id)
         requester = self.bot.get_user(track.extra.get('requester', 0))
 
-        # O teu Embed de Now Playing
         embed = self._now_playing_embed(track, player, requester)
         msg = await channel.send(embed=embed)
 
@@ -190,22 +195,13 @@ class Music(commands.Cog):
     @lavalink.listener(QueueEndEvent)
     async def on_queue_end(self, event: QueueEndEvent):
         guild_id = event.player.guild_id
-        guild = self.bot.get_guild(guild_id)
 
-        if guild_id in self.progress_tasks:
-            task = self.progress_tasks[guild_id]
-            if not task.done():
-                task.cancel()
-
-        self.progress_tasks[guild_id] = asyncio.create_task(self.inactivity_watcher(guild_id, timeout=300))
+        self._start_watcher(guild_id)
 
         channel_id = event.player.fetch('text_channel')
         if channel_id:
             channel = self.bot.get_channel(channel_id)
             await channel.send(embed=discord.Embed(description="🏁 **End of the queue.**", color=green))
-
-        #if guild and guild.voice_client:
-        #    await guild.voice_client.disconnect(force=True)
 
     async def on_inactive_event(self, guild_id):
         player = self.lavalink.player_manager.get(guild_id)
@@ -226,33 +222,38 @@ class Music(commands.Cog):
                 embed = discord.Embed(description=":wave: **Disconnected due to inactivity.**", color=blue)
                 await channel.send(embed=embed)
 
-    async def on_channel_empty(self, guild_id):
-        timeout = 300  # 5 minutes
-        if guild_id in self.progress_tasks:
-            task = self.progress_tasks[guild_id]
-            if not task.done():
-                task.cancel()
-        await self.inactivity_watcher(guild_id, timeout)
-
     async def inactivity_watcher(self, guild_id, timeout):
         await asyncio.sleep(timeout)
 
         player = self.lavalink.player_manager.get(guild_id)
+        guild = self.bot.get_guild(guild_id)
 
-        if player:
+        if not guild or not guild.voice_client:
+            return
+
+        condition_stopped = not player.is_playing and len(player.queue) == 0
+        condition_alone = len(guild.voice_client.channel.members) == 1
+
+        if condition_stopped or condition_alone:
             await self.on_inactive_event(guild_id)
 
     @commands.Cog.listener()
-    async def on_voice_state_update(self, member, before, after):
+    async def on_voice_state_update(self, member):
         if member.id == self.bot.user.id:
             return
 
-        if before.channel is not None:
-            guild = before.channel.guild
-            vc = guild.voice_client
+        guild = member.guild
+        vc = guild.voice_client
 
-            if vc and vc.channel.id == before.channel.id and len(vc.channel.members) == 1:
-                await self.on_channel_empty(guild.id)
+        if not vc:
+            return
+
+        if len(vc.channel.members) == 1:
+            await self._start_watcher(guild.id)
+        elif len(vc.channel.members) > 1:
+            player = self.lavalink.player_manager.get(guild.id)
+            if player and player.is_playing:
+                self._stop_watcher(guild.id)
 
     # COMMANDS
     @commands.command(name='connect', aliases=['con', 'c'])
@@ -262,20 +263,29 @@ class Music(commands.Cog):
                 embed=discord.Embed(color=red, description=':x: **You are not connected to a voice channel.**'))
 
         player = self.bot.lavalink.player_manager.create(ctx.guild.id)
-        player.store('text_channel', ctx.channel.id)  # Guarda o canal para as mensagens
+        player.store('text_channel', ctx.channel.id)  # Store the text channel ID for later use
 
         if not ctx.voice_client:
             await ctx.author.voice.channel.connect(cls=LavalinkVoiceClient, self_deaf=True)
-            await ctx.send(embed=discord.Embed(color=green,
-                                               description=f':white_check_mark: Connected to **{ctx.author.voice.channel.name}**.'))
+            await ctx.send(embed=discord.Embed(
+                color=green,
+                description=f':white_check_mark: Connected to **{ctx.author.voice.channel.name}**.')
+            )
         else:
-            await ctx.send(embed=discord.Embed(color=blue, description=f':information_source: Already connected.'))
+            await ctx.send(embed=discord.Embed(
+                color=blue,
+                description=':information_source: Already connected.')
+            )
 
     @commands.command(name='disconnect', aliases=['dis', 'dc'])
     async def disconnect(self, ctx):
         if not ctx.voice_client:
             return await ctx.send(
-                embed=discord.Embed(color=red, description=':x: **Not connected to any voice channel.**'))
+                embed=discord.Embed(
+                    color=red,
+                    description=':x: **Not connected to any voice channel.**'
+                )
+            )
 
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
         player.queue.clear()
@@ -283,11 +293,13 @@ class Music(commands.Cog):
 
         channel_name = ctx.voice_client.channel.name
         await ctx.voice_client.disconnect(force=True)
-        await ctx.send(embed=discord.Embed(color=green, description=f':wave: Disconnected from **{channel_name}**.'))
+        await ctx.send(embed=discord.Embed(
+            color=green,
+            description=f':wave: Disconnected from **{channel_name}**.')
+        )
 
     @commands.command()
     async def play(self, ctx, *, query: str):
-        # remove o embed do link
         await ctx.message.edit(suppress=True)
 
         shuffle = False
@@ -297,9 +309,8 @@ class Music(commands.Cog):
 
         if not ctx.author.voice:
             return await ctx.send(
-                embed=discord.Embed(color=red, description='❌ **You are not connected to a voice channel.**'))
+                embed=discord.Embed(color=red, description=':x: **You are not connected to a voice channel.**'))
 
-        # Liga automaticamente se não estiver ligado
         if not ctx.voice_client:
             await ctx.invoke(self.connect)
 
@@ -307,16 +318,14 @@ class Music(commands.Cog):
 
         query = query.strip('<>')
         if not url_rx.match(query):
-            query = f'ytsearch:{query}'  # Força a pesquisa no youtube se não for link
+            query = f'ytsearch:{query}'  # Force YouTube search if it's not a URL
 
-        search_msg = await ctx.send(f"🔍 **Searching...**", suppress_embeds=True)
+        search_msg = await ctx.send(f"🔍 **Searching for {query}...**", suppress_embeds=True)
         results = await player.node.get_tracks(query)
 
         if results.load_type == LoadType.EMPTY:
             return await search_msg.edit(content='',
-                                         embed=discord.Embed(color=red, description="❌ **No results found.**"))
-
-        embed = discord.Embed(color=green)
+                                         embed=discord.Embed(color=red, description=":x: **No results found.**"))
 
         if results.load_type == LoadType.PLAYLIST:
             p_tracks = results.tracks
@@ -328,7 +337,7 @@ class Music(commands.Cog):
 
             playlist_added_embed = discord.Embed(
                 color=green,
-                description="📥 **Playlist `{results.playlist_info.name}` added with {len(p_tracks)} songs.**"
+                description=f"📥 **Playlist `{results.playlist_info.name}` added with {len(p_tracks)} songs.**"
             )
             playlist_added_embed.set_footer(text=f"Requested by {ctx.author.display_name}", icon_url=ctx.author.display_avatar.url)
             await search_msg.edit(content='', embed=playlist_added_embed)
@@ -392,22 +401,31 @@ class Music(commands.Cog):
         if not player or (not player.is_playing and len(player.queue) == 0):
             return await ctx.send(embed=discord.Embed(description=":x: **The queue is empty.**", color=red))
 
-        embed = discord.Embed(color=blue, title="🎶 Music Queue")
+        items = []
+
+        total_queue_time = sum(track.duration for track in player.queue)
+        formatted_total_time = self.format_time_hhmmss(total_queue_time)
+
+        items.append(f"**Total queue time:** `{formatted_total_time}`\n")
+
         if player.current:
-            current = f"**{player.current.title}** by `{player.current.author}`"
+            items.append("**Now Playing:**")
             if player.current.stream:
-                current += " (LIVE)"
-            embed.add_field(name="Now Playing", value=current, inline=False)
+                items.append(":red_circle: **LIVE**")
+            else:
+                items.append(f"**{player.current.title}** by `{player.current.author}`")
 
         if len(player.queue) > 0:
-            queue_text = ""
-            for i, track in enumerate(player.queue[:10], start=1):
-                queue_text += f"**{i}. {track.title}** by `{track.author}`"
-            if len(player.queue) > 10:
-                queue_text += f"... and {len(player.queue) - 10} more."
-            embed.add_field(name="Up Next", value=queue_text, inline=False)
+            items.append("\n**Up Next:**")
+            for i, track in enumerate(player.queue, start=1):
+                items.append(f"**{i}. {track.title}** by `{track.author}`")
 
-        await ctx.send(embed=embed)
+        await self.paginate(
+            ctx,
+            items,
+            title="🎶 **Queue**",
+            per_page=10
+        )
 
 async def setup(bot):
     await bot.add_cog(Music(bot))
