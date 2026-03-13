@@ -57,7 +57,7 @@ def generate_progress_bar(current, total, length=20):
 '''
 
 class Music(commands.Cog):
-    vc: wavelink.Player = None
+    #vc: wavelink.Player = None
 
     def __init__(self, bot):
         self.bot = bot
@@ -71,13 +71,10 @@ class Music(commands.Cog):
     async def setup(self):
         nodes = [wavelink.Node(
             identifier='MAIN',
-            uri='http://localhost:2333',
+            uri='http://localhost:2333/',
             password=PASSWORD,
         )]
         await wavelink.Pool.connect(nodes=nodes, client=self.bot, cache_capacity=100)
-
-    async def setup_hook(self):
-        await self.setup()
 
     @commands.Cog.listener()
     async def on_wavelink_node_ready(self, payload: wavelink.NodeReadyEventPayload) -> None:
@@ -89,17 +86,25 @@ class Music(commands.Cog):
         r_embed = discord.Embed(color=red)
         if not ctx.author.voice:
             r_embed.description = ':x: **You are not connected to a voice channel.**'
-            await ctx.send(embed=r_embed)
-            return
+            return await ctx.send(embed=r_embed)
 
         channel = ctx.author.voice.channel
+
         if ctx.voice_client:
-            r_embed.description = f':information_source: Already connected to **{ctx.voice_client.channel.name}**.'
-        else:
-            self.vc = await channel.connect(cls=wavelink.Player)
-            self.vc.text_channel = ctx.channel
+            if ctx.voice_client.channel.id == channel.id:
+                r_embed.description = f':information_source: Already connected to **{ctx.voice_client.channel.name}**.'
+                return await ctx.send(embed=r_embed)
+        try:
+            vc: wavelink.Player = await channel.connect(cls=wavelink.Player, self_deaf=True)
+            if not vc.channel:
+                vc.channel = channel
+            vc.text_channel = ctx.channel
+
             g_embed.description = f':white_check_mark: Connected to **{channel.name}**.'
-        await ctx.send(embed=g_embed)
+            await ctx.send(embed=g_embed)
+        except Exception as e:
+            r_embed.description = f':x: **Failed to connect to the voice channel.**\n`{str(e)}`'
+            await ctx.send(embed=r_embed)
 
     @commands.Cog.listener()
     async def on_wavelink_track_exception(self, payload: wavelink.TrackExceptionEventPayload):
@@ -156,7 +161,27 @@ class Music(commands.Cog):
                 print(f"Failed to edit message: {e}, stopping progress updater.")
                 await asyncio.sleep(1)
 
+    @commands.command()
+    async def test(self, ctx):
+        if not ctx.author.voice:
+            return await ctx.send("Entra num canal.")
 
+        player: wavelink.Player
+
+        if not ctx.voice_client:
+            player = await ctx.author.voice.channel.connect(cls=wavelink.Player)
+        else:
+            player = ctx.voice_client
+
+        tracks = await wavelink.Playable.search("Monster Skillet")
+
+        print("Tracks:", tracks)
+
+        await player.play(tracks[0])
+
+        print("Play command sent")
+
+        await ctx.send("Tentei tocar.")
 
     @commands.command()
     async def play(self, ctx, *, query: str):
@@ -179,6 +204,8 @@ class Music(commands.Cog):
                     )
                 )
             try:
+                #vc: wavelink.Player = await ctx.author.voice.channel.connect(cls=wavelink.Player)
+                #vc.text_channel = ctx.channel
                 await ctx.invoke(self.connect)
             except Exception as e:
                 return await ctx.send(
@@ -343,9 +370,6 @@ class Music(commands.Cog):
         task = asyncio.create_task(self.start_progress_updater(vc, track, msg))
 
         self.progress_tasks[vc.guild.id] = task
-
-        #logging.info("Num of active progress tasks:", len(self.progress_tasks))
-
 
     @commands.Cog.listener()
     async def on_wavelink_inactive_player(self, player: wavelink.Player):
