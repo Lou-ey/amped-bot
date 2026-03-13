@@ -12,7 +12,7 @@ def webhook():
     if token != SECRET_TOKEN:
         abort(403)  # Forbidden if token does not match
 
-    subprocess.Popen(["/bin/bash", "/home/luis/Projects/discord_bot/amped-bot/server/update.sh"])
+    subprocess.Popen(["/bin/bash", "/home/user/amped-bot/server/update.sh"])
     return "Update started!", 200
 
 if __name__ == '__main__':
