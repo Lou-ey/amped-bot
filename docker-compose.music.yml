@@ -1,14 +1,18 @@
 services:
   lavalink:
-    image: "ghcr.io/lavalink-devs/lavalink:4.1.2" # Use the latest version of Lavalink
+    image: "ghcr.io/lavalink-devs/lavalink:latest" # Use the latest version of Lavalink
     container_name: "lavalink"
-    network_mode: "host"
+    #network_mode: "host"
     volumes:
       - "./lavalink/application.yml:/opt/Lavalink/application.yml"
-    #networks:
-    #  - lavalink
+    networks:
+      - lavalink
     expose:
       - "2333"
     ports:
       - "2333:2333"
     restart: "unless-stopped"
+
+networks:
+    lavalink:
+        driver: "bridge"
