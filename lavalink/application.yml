@@ -57,8 +57,8 @@ plugins:
       #password: "youshallnotpass"
 
     oauth:
-      enabled: false # Whether this source can be used.
-      #refreshToken: "1//03d0ro-axS1aLCgYIARAAGAMSNwF-L9IrYZv2fDEqopf43J7qV-tDNiJDW769tZ-kl-xKX8_plaj-JwKpdFnK7w_8jDvD_qSrSwk"
+      enabled: true # Whether this source can be used.
+      refreshToken: "1//03d0ro-axS1aLCgYIARAAGAMSNwF-L9IrYZv2fDEqopf43J7qV-tDNiJDW769tZ-kl-xKX8_plaj-JwKpdFnK7w_8jDvD_qSrSwk"
       # skipInitialization: true # Whether to skip the OAuth initialization on startup. If true, you must call YoutubeOAuth2Handler#initialize manually before using this source.
 
     allowSearch: true # Whether "ytsearch:" and "ytmsearch:" can be used.
