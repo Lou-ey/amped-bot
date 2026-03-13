@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-import wavelink
+import lavalink
 import requests
 
 repo_owner = "Lou-ey"
@@ -20,7 +20,7 @@ for file in response:
         sound_effects[key_name] = url
 
 class SoundSelect(discord.ui.Select):
-    def __init__(self, vc: wavelink.Player, options):
+    def __init__(self, vc: lavalink., options):
         self.vc = vc
         super().__init__(
             placeholder="Escolhe um som...",
