@@ -14,7 +14,7 @@ intents.members = True
 intents.message_content = True
 intents.voice_states = True
 
-bot = commands.Bot(command_prefix='!', intents=intents)
+bot = commands.Bot(command_prefix='!', intents=intents, help_command=None   )
 
 green = 0x00FF00
 red = 0xFF0000
@@ -23,40 +23,40 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 disabled_cogs = [cog.strip() for cog in os.getenv('DISABLED_COGS', '').split(',') if cog.strip()]
 
-#utils = Utils(bot)
+async def setup_hook():
+    logging.info('Loading cogs...')
+    for filename in os.listdir('./cogs'):
+        if filename.endswith('.py') and filename[:-3] not in disabled_cogs:
+            cog_name = f'cogs.{filename[:-3]}'
+            try:
+                await bot.load_extension(cog_name)
+                logging.info(f'Loaded cog: {filename[:-3]}')
+            except Exception as e:
+                logging.info(f"Failed to load '{cog_name}': {e}")
+
+    await bot.tree.sync()
+    logging.info('Finished loading cogs and syncing commands.')
+
+bot.setup_hook = setup_hook
 
 @bot.event
 async def on_ready():
-    activity = discord.Activity(type=discord.ActivityType.listening, name='!help')
+    activity = discord.Activity(type=discord.ActivityType.listening, name='/help')
     await bot.change_presence(activity=activity)
+
     logging.info(f'{bot.user} has connected to the following servers:\n')
     for server in bot.guilds:
         logging.info(f'- {server.name} (id: {server.id})')
 
         bot.tree.copy_global_to(guild=server) # Copy global commands to the server
         await bot.tree.sync(guild=server) # Sync the commands to the server
-    logging.info(f'\nCogs loaded:')
-    # verify that the cogs already loaded
-    for filename in os.listdir('./cogs'):
-        if filename.endswith('.py') and filename[:-3] not in disabled_cogs:
-            cog_name = f'cogs.{filename[:-3]}'
-            try:
-                if cog_name in bot.extensions:
-                    logging.info(f'Cog {filename[:-3]} already loaded, ignoring...')
-                else:
-                    await bot.load_extension(cog_name)
-                    logging.info(f'Loaded cog: {filename[:-3]}')
-            except Exception as e:
-                logging.info(f"Failed to load '{cog_name}': {e}")
-
-    #await utils.terminal_commanding(logging=logging)
 
 @bot.event
 async def on_message(message):
     await bot.process_commands(message)
 
 @bot.tree.command(name='help', description='Help command')
-async def help(ctx): # This is a global command
+async def help(interaction: discord.Interaction): # This is a global command
     embed = discord.Embed(title='Help', color=green)
     embed.description = 'This is a help command'
     embed.add_field(name='!help', value='This command', inline=False)
@@ -66,7 +66,8 @@ async def help(ctx): # This is a global command
     embed.add_field(name='!stop', value='Stop the song', inline=False)
     embed.add_field(name='!skip', value='Skip the song', inline=False)
     embed.add_field(name='!queue', value='Show the queue', inline=False)
-    await ctx.response.send_message(embed=embed)
+
+    await interaction.response.send_message(embed=embed)
 
 @bot.command()
 async def chg_vc(ctx, from_channel: discord.VoiceChannel, to_channel: discord.VoiceChannel):

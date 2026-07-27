@@ -172,7 +172,10 @@ class Music(commands.Cog):
         track = event.track
         guild_id = player.guild_id
 
-        self._stop_watcher(guild_id)
+        guild = self.bot.get_guild(guild_id)
+
+        if guild and guild.voice_client and len(guild.voice_client.channel.members) > 1:
+            self._stop_watcher(guild_id)
 
         channel_id = player.fetch('text_channel')
         if not channel_id:
@@ -238,7 +241,7 @@ class Music(commands.Cog):
             await self.on_inactive_event(guild_id)
 
     @commands.Cog.listener()
-    async def on_voice_state_update(self, member):
+    async def on_voice_state_update(self, member, before, after):
         if member.id == self.bot.user.id:
             return
 
@@ -249,10 +252,11 @@ class Music(commands.Cog):
             return
 
         if len(vc.channel.members) == 1:
-            await self._start_watcher(guild.id)
+            self._start_watcher(guild.id)
+
         elif len(vc.channel.members) > 1:
             player = self.lavalink.player_manager.get(guild.id)
-            if player and player.is_playing:
+            if player and (player.is_playing or len(player.queue) > 0):
                 self._stop_watcher(guild.id)
 
     # COMMANDS
@@ -284,6 +288,14 @@ class Music(commands.Cog):
                 embed=discord.Embed(
                     color=red,
                     description=':x: **Not connected to any voice channel.**'
+                )
+            )
+
+        if ctx.author.voice is None or ctx.author.voice.channel != ctx.voice_client.channel:
+            return await ctx.send(
+                embed=discord.Embed(
+                    color=red,
+                    description=':x: **You must be in the same voice channel to disconnect the bot.**'
                 )
             )
 
@@ -393,6 +405,7 @@ class Music(commands.Cog):
         if player and (player.is_playing or player.paused):
             player.queue.clear()
             await player.stop()
+            self._start_watcher(player.guild_id)
             await ctx.send(embed=discord.Embed(description="⏹️ **Music stopped and queue cleared.**", color=green))
 
     @commands.command(name='queue', aliases=['q'])

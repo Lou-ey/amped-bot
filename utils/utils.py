@@ -1,7 +1,7 @@
 from datetime import timedelta
+import discord
 import os
 import sys
-import discord
 
 class Utils:
     def __init__(self, bot):
@@ -9,7 +9,16 @@ class Utils:
 
     @staticmethod
     def format_time(ms: int) -> str:
-        return str(timedelta(milliseconds=ms))[2:7]
+        total_seconds = ms // 1000
+
+        hours = total_seconds // 3600
+        minutes = (total_seconds % 3600) // 60
+        seconds = (total_seconds % 3600) % 60
+
+        if hours > 0:
+            return f"{hours}:{minutes:02}:{seconds:02}"
+
+        return f"{minutes:02}:{seconds:02}"
 
     @staticmethod
     def format_time_hhmmss(ms: int) -> str:
@@ -118,6 +127,10 @@ class PaginationView(discord.ui.View):
         self.pages = pages
         self.title = title
         self.current = 0
+
+        if len(self.pages) <= 1:
+            self.previous_btn.disabled = True
+            self.next_btn.disabled = True
 
     def make_embed(self):
         embed = discord.Embed(
